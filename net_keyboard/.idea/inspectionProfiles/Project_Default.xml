@@ -1,0 +1,44 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="annotated-types" />
+          <option value="bcrypt" />
+          <option value="blinker" />
+          <option value="cachelib" />
+          <option value="click" />
+          <option value="colorama" />
+          <option value="dnspython" />
+          <option value="email-validator" />
+          <option value="Flask" />
+          <option value="Flask-Login" />
+          <option value="Flask-Session" />
+          <option value="greenlet" />
+          <option value="idna" />
+          <option value="itsdangerous" />
+          <option value="Jinja2" />
+          <option value="MarkupSafe" />
+          <option value="msgspec" />
+          <option value="psycopg2-binary" />
+          <option value="pydantic" />
+          <option value="pydantic_core" />
+          <option value="python-dotenv" />
+          <option value="SQLAlchemy" />
+          <option value="sqlmodel" />
+          <option value="typing-inspection" />
+          <option value="typing_extensions" />
+          <option value="Werkzeug" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N802" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
