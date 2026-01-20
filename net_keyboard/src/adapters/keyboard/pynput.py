@@ -20,8 +20,7 @@ class PynputServer(BaseServer):
             self.send(key.name)
         
         elif isinstance(key, KeyCode):
-            if key.char: 
-                self.send(key.char)
+            self.send(key.char)
 
     def run(self) -> None:
         threading.Thread(target=self.keyboard_event.listen).start()
@@ -37,6 +36,7 @@ class PynputClient(BaseClient):
     def run(self) -> None:
         while True:
             data: Optional[str] = self.receive()
+            print(data)
 
             if data:
                 self.keyboard_event.insert(data)

