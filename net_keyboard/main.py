@@ -4,9 +4,10 @@ import threading
 from src.adapters.keyboard.pynput import PynputServer, PynputClient
 
 
-def k1() -> None:
+"""def k1() -> None:
     server = PynputServer(e.SERVER_HOST, e.SERVER_PORT)
     server.run()
+
 
 def k2() -> None:
     client = PynputClient(e.CLIENT_HOST, e.CLIENT_PORT)
@@ -33,4 +34,28 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+"""
 
+def on_press(key):
+    try:
+        if isinstance(key, keyboard.KeyCode):
+            print("KeyCode pressed: ", {
+                'char': key.char,
+                'vk': key.vk
+            })
+            
+        elif isinstance(key, keyboard.Key):
+            print("Key pressed: ", {
+                'name': key.name,
+                'value': key.value
+            })
+            
+    except AttributeError:
+        print('special key {0} pressed'.format(
+            key))
+        
+    
+from pynput import keyboard
+listener = keyboard.Listener(
+    on_press=on_press)
+listener.start()

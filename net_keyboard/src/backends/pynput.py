@@ -1,6 +1,6 @@
 from typing import Callable, Any, Union
 from src.backends.base import KeyboardBackend, MouseBackend, MouseTypeEvent,\
-    KeyboardTypeEvent, KeyboardCallbackList, MouseCallbackList
+    KeyboardTypeEvent, KeyboardCallList, MouseCallList
 from pynput import keyboard
 from pynput import mouse
 from pynput.keyboard import Key, KeyCode, Controller
@@ -14,7 +14,7 @@ PynputButton = Button
 class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
 
     def __init__(self) -> None:
-        self.callbacks: KeyboardCallbackList = KeyboardCallbackList()
+        self.callbacks: KeyboardCallList = KeyboardCallList()
         self.controller = Controller()
 
     def on_press(self, key: PynputKey) -> None:
@@ -24,6 +24,8 @@ class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
         self.notify_callbacks(key, KeyboardTypeEvent.RELEASE)
     
     def insert(self, key: str) -> None:
+        if hasattr(Key, key):
+            self.controller.press(getattr(Key, key))
         self.controller.press(key)
     
     def add_callback(
@@ -64,7 +66,7 @@ class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
 class PynputMouseEvent(MouseBackend[PynputButton]):
 
     def __init__(self) -> None:
-        self.callbacks: MouseCallbackList = MouseCallbackList()
+        self.callbacks: MouseCallList = MouseCallList()
 
     def on_move(
         self,

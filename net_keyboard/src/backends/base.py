@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 K = TypeVar("K")
 B = TypeVar("B")
-Callbacks = List[Callable[..., None]]
+CallList = List[Callable[..., None]]
 
 
 class MouseTypeEvent(Enum):
@@ -21,16 +21,16 @@ class KeyboardTypeEvent(Enum):
 
 
 @dataclass
-class KeyboardCallbackList:
-    press: Callbacks = field(default_factory=list)
-    release: Callbacks = field(default_factory=list) 
+class KeyboardCallList:
+    press: CallList = field(default_factory=list)
+    release: CallList = field(default_factory=list) 
 
 
 @dataclass
-class MouseCallbackList:
-    move: Callbacks = field(default_factory=list)
-    click: Callbacks = field(default_factory=list) 
-    scroll: Callbacks = field(default_factory=list) 
+class MouseCallList:
+    move: CallList = field(default_factory=list)
+    click: CallList = field(default_factory=list) 
+    scroll: CallList = field(default_factory=list) 
 
 
 class KeyboardBackend(Generic[K], ABC):

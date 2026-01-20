@@ -1,27 +1,9 @@
 from typing import Optional
-from dataclasses import dataclass, field
 from src.tcp import BaseServer, BaseClient
 import threading
 from src.backends.base import KeyboardTypeEvent, MouseTypeEvent
 from src.backends.pynput import PynputKeyboardEvent, PynputMouseEvent, PynputKey
 from pynput.keyboard import Key, KeyCode
-
-
-@dataclass
-class Keyboard:
-    code: Optional[str | int] = field(default=None)
-    value: Optional[int] = field(default=0)
-
-
-@dataclass
-class Mouse:
-    ...
-
-
-@dataclass
-class Packet:
-    keyboard: Keyboard
-    mouse: Mouse
 
 
 class PynputServer(BaseServer):
@@ -31,10 +13,7 @@ class PynputServer(BaseServer):
         self.keyboard_event = PynputKeyboardEvent()
         self.mouse_event = PynputMouseEvent()
 
-        self.keyboard_event.add_callback(
-            self.keyboard_press, 
-            KeyboardTypeEvent.PRESS
-        )
+        self.keyboard_event.add_callback(self.keyboard_press, KeyboardTypeEvent.PRESS)
 
     def keyboard_press(self, key: PynputKey) -> None:
         if isinstance(key, Key): 
@@ -49,15 +28,15 @@ class PynputServer(BaseServer):
 
 
 class PynputClient(BaseClient):
-    
+
     def __init__(self, host: str, port: int) -> None:
         super().__init__(host, port)
         self.keyboard_event = PynputKeyboardEvent()
         self.mouse_event = PynputMouseEvent()
-        
+
     def run(self) -> None:
         while True:
-            data: str = self.receive()
+            data: Optional[str] = self.receive()
 
             if data:
                 self.keyboard_event.insert(data)
