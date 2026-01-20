@@ -4,7 +4,7 @@ import threading
 from src.adapters.keyboard.pynput import PynputServer, PynputClient
 
 
-"""def k1() -> None:
+def k1() -> None:
     server = PynputServer(e.SERVER_HOST, e.SERVER_PORT)
     server.run()
 
@@ -34,9 +34,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-"""
 
-def on_press(key):
+
+"""def on_press(key):
     try:
         if isinstance(key, keyboard.KeyCode):
             print("KeyCode pressed: ", {
@@ -58,4 +58,4 @@ def on_press(key):
 from pynput import keyboard
 listener = keyboard.Listener(
     on_press=on_press)
-listener.start()
+listener.start()"""
