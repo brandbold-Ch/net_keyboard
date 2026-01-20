@@ -57,7 +57,7 @@ class PynputClient(BaseClient):
         
     def run(self) -> None:
         while True:
-            data: Optional[str] = self.receive()
+            data: str = self.receive()
 
             if data:
                 self.keyboard_event.insert(data)

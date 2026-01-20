@@ -18,7 +18,7 @@ class BaseClient(TCP):
     def receive(self) -> Any:
         data = self._client.recv(1024)
         if data:
-            return data
+            return data.decode()
         return None
 
     def connect(self) -> None:
