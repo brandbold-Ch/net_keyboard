@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 k1 = "server"
@@ -9,13 +9,13 @@ file = "config.json"
 
 class Confing:
 
-    SERVER_HOST: Optional[str] = None
-    SERVER_PORT: Optional[int] = None
+    SERVER_HOST: str = "0.0.0.0"
+    SERVER_PORT: int = 5000
 
-    CLIENT_HOST: Optional[str] = None
-    CLIENT_PORT: Optional[int] = None
+    CLIENT_HOST: str = "127.0.0.1"
+    CLIENT_PORT: int = 5000
 
-    CONNECTIONS: List[Dict[str, int]] = None
+    CONNECTIONS: List[Dict[str, int]] = []
 
     def __init__(self) -> None:
         self.load_config()
@@ -35,16 +35,19 @@ class Confing:
     def dump_config(self) -> None:
         with open(file, "w") as raw:
             json.dump({
-                "server": {
+                k1: {
                     "host": self.SERVER_HOST,
                     "port": self.SERVER_PORT
                 },
-                "client": {
+                k2: {
                     "host": self.CLIENT_HOST,
                     "port": self.CLIENT_PORT
                 },
                 "connections": self.CONNECTIONS
-            }, fp=raw, indent=2)
+            }, 
+            fp=raw, 
+            indent=2
+        )
 
 
 def config() -> Confing:

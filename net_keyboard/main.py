@@ -1,18 +1,16 @@
 import sys
 from src.utils.config import e
-from src.keyboard.main import KeyboardServer, KeyboardClient
 import threading
+from src.adapters.keyboard.pynput import PynputServer, PynputClient
 
 
 def k1() -> None:
-    k = KeyboardServer()
-    k.keyboard_event.add_capturer(k.send)
-
+    server = PynputServer(e.SERVER_HOST, e.SERVER_PORT)
+    server.run()
 
 def k2() -> None:
-    k = KeyboardClient()
-    while True:
-        print("\nKeyboard Event: ", k.receive())
+    client = PynputClient(e.CLIENT_HOST, e.CLIENT_PORT)
+    client.run()
 
 
 def main() -> None:
@@ -35,3 +33,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
