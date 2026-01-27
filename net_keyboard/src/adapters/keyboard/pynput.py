@@ -1,13 +1,13 @@
 """Pynput adapter module for keyboard and mouse event handling over network."""
 from typing import Optional
-from src.tcp import BaseServer, BaseClient
+from src.socket import TcpServer, TcpClient
 import threading
 from src.backends.base import KeyboardTypeEvent, MouseTypeEvent
 from src.backends.pynput import PynputKeyboardEvent, PynputMouseEvent, PynputKey
 from pynput.keyboard import Key, KeyCode
 
 
-class PynputServer(BaseServer):
+class PynputServer(TcpServer):
     """
     TCP server adapter for keyboard events using Pynput.
     
@@ -42,14 +42,8 @@ class PynputServer(BaseServer):
         elif isinstance(key, KeyCode):
             self.send(key.char)
 
-    def run(self) -> None:
-        """
-        Start the server and listen for keyboard events in a separate thread.
-        """
-        threading.Thread(target=self.keyboard_event.listen).start()
 
-
-class PynputClient(BaseClient):
+class PynputClient(TcpClient):
     """
     TCP client adapter for simulating keyboard and mouse events using Pynput.
     
@@ -68,14 +62,3 @@ class PynputClient(BaseClient):
         super().__init__(host, port)
         self.keyboard_event = PynputKeyboardEvent()
         self.mouse_event = PynputMouseEvent()
-
-    def run(self) -> None:
-        """
-        Start the client and receive keyboard events from the server.
-        
-        Continuously receives keyboard event data from the server and
-        simulates the keystrokes locally.
-        """
-        while True:
-            data: bytes = self.receive()
-            self.keyboard_event.insert("data")

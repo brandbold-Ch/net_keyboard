@@ -1,10 +1,10 @@
 """Client module for TCP communication."""
 from typing import Union
-from src.tcp.base import TCP
+from src.socket.base import NetworkChannel
 import socket
 
 
-class BaseClient(TCP):
+class TcpClient(NetworkChannel):
     """
     Base TCP client class for establishing network connections.
     
@@ -24,7 +24,7 @@ class BaseClient(TCP):
         self.host: str = host
         self.port: int = port
 
-        self.connect()
+        self.open()
 
     def send(self, packet: Union[str, bytes]) -> None:
         """
@@ -51,19 +51,19 @@ class BaseClient(TCP):
         """
         return self._client.recv(1024)
         
-    def connect(self) -> None:
+    def open(self) -> None:
         """
         Connect to the TCP server using the configured host and port.
         """
         self._client.connect((self.host, self.port))
 
-    def disconnect(self) -> None:
+    def close(self) -> None:
         """
         Close the client socket and disconnect from the server.
         """
         self._client.close()
 
-    def run(self) -> None:
+    def start(self) -> None:
         """
         Run the client main loop.
         

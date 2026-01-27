@@ -1,9 +1,10 @@
 """Base module for TCP communication abstraction."""
 from typing import Union
 from abc import ABC, abstractmethod
+from socket import _Address
 
 
-class TCP(ABC):
+class NetworkChannel(ABC):
     """
     Abstract base class for TCP communication.
     
@@ -22,32 +23,28 @@ class TCP(ABC):
         pass
     
     @abstractmethod
-    def receive(self) -> bytes:
+    def receive(self, size: int) -> str | bytes:
         """
         Receive data from the connection.
         
+        Args:
+            size (int): The number of bytes to receive.
         Returns:
-            bytes: The received data.
+            str | bytes: The received data.
         """
         pass
     
     @abstractmethod
-    def connect(self) -> None:
+    def open(self, address: _Address) -> None:
         """
         Establish a connection.
         """
         pass
     
     @abstractmethod
-    def disconnect(self) -> None:
+    def close(self) -> None:
         """
         Close the connection.
         """
         pass
     
-    @abstractmethod
-    def run(self) -> None:
-        """
-        Execute the main communication loop.
-        """
-        pass

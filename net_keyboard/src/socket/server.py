@@ -1,10 +1,10 @@
 """Server module for TCP communication."""
 from typing import Optional, Union
-from src.tcp.base import TCP
+from src.socket.base import NetworkChannel
 import socket
 
 
-class BaseServer(TCP):
+class TcpServer(NetworkChannel):
     """
     Base TCP server class for handling network connections.
     
@@ -26,7 +26,7 @@ class BaseServer(TCP):
         self.connection: Optional[socket.socket] = None
         self.address: Optional[str] = None
 
-        self.connect()       
+        self.open()       
 
     def send(self, packet: Union[str, bytes]) -> None:
         """
@@ -50,7 +50,7 @@ class BaseServer(TCP):
         else:
             raise TypeError("Invalid data type, cannot be sent over the network")
         
-    def receive(self) -> bytes:
+    def receive(self, size: int) -> bytes:
         """
         Receive data from the connected client.
         
@@ -61,11 +61,10 @@ class BaseServer(TCP):
             ConnectionError: If no active connection is available.
         """
         if self.connection is None:
-            raise ConnectionError("No active connection. Cannot receive packets")
-        
-        return self.connection.recv(1024)
+            raise ConnectionError("No active connection. Cannot receive packets")  
+        return self.connection.recv(size)
 
-    def connect(self) -> None:
+    def open(self) -> None:
         """
         Establish the server connection and wait for client connections.
         
@@ -76,13 +75,13 @@ class BaseServer(TCP):
         self._server.listen()
         self.connection, self.address = self._server.accept()
 
-    def disconnect(self) -> None:
+    def close(self) -> None:
         """
         Close the server socket and disconnect from clients.
         """
         self._server.close()
 
-    def run(self) -> None:
+    def start(self) -> None:
         """
         Run the server main loop.
         

@@ -1,13 +1,13 @@
 """Base module for keyboard and mouse backend abstraction."""
-from typing import Generic, TypeVar, List, Callable
+from typing import Generic, TypeVar, List, Callable, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum
 from dataclasses import dataclass, field
 
 
-K = TypeVar("K")
 B = TypeVar("B")
-CallList = List[Callable[..., None]]
+Subscribers = List[Callable[..., None]]
+TUPLE_CODES = Tuple[int, int, int]
 
 
 class MouseTypeEvent(Enum):
@@ -24,16 +24,16 @@ class KeyboardTypeEvent(Enum):
 
 
 @dataclass
-class KeyboardCallList:
+class KbdSubList:
     """
     Container for keyboard event callbacks.
     
     Attributes:
-        press (CallList): List of callbacks for key press events.
-        release (CallList): List of callbacks for key release events.
+        press (Subscribers): List of callbacks for key press events.
+        release (Subscribers): List of callbacks for key release events.
     """
-    press: CallList = field(default_factory=list)
-    release: CallList = field(default_factory=list) 
+    press: Subscribers = field(default_factory=list)
+    release: Subscribers = field(default_factory=list) 
 
 
 @dataclass
@@ -46,12 +46,12 @@ class MouseCallList:
         click (CallList): List of callbacks for mouse click events.
         scroll (CallList): List of callbacks for mouse scroll events.
     """
-    move: CallList = field(default_factory=list)
-    click: CallList = field(default_factory=list) 
-    scroll: CallList = field(default_factory=list) 
+    move: Subscribers = field(default_factory=list)
+    click: Subscribers = field(default_factory=list) 
+    scroll: Subscribers = field(default_factory=list) 
 
 
-class KeyboardBackend(Generic[K], ABC):
+class KeyboardBackend(ABC):
     """
     Abstract base class for keyboard backend implementations.
     
@@ -60,32 +60,32 @@ class KeyboardBackend(Generic[K], ABC):
     """
     
     @abstractmethod
-    def on_press(self, key: K) -> None:
+    def on_press(self, codes: TUPLE_CODES) -> None:
         """
         Handle keyboard press events.
         
         Args:
-            key (K): The key that was pressed.
+            codes (Tuple[int, int, int]): The scancode, state, and time of the key that was pressed.
         """
         pass
     
     @abstractmethod
-    def on_release(self, key: K) -> None:
+    def on_release(self, codes: TUPLE_CODES) -> None:
         """
         Handle keyboard release events.
         
         Args:
-            key (K): The key that was released.
+            codes (Tuple[int, int, int]): The scancode, state, and time of the key that was released.
         """
         pass
     
     @abstractmethod
-    def insert(self, key: str) -> None:
+    def press(self, code: int) -> None:
         """
         Simulate pressing a key.
         
         Args:
-            key (str): The key to press.
+            code (int): The scancode of the key to press.
         """
         pass
     

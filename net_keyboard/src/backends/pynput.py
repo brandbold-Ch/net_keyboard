@@ -1,7 +1,7 @@
 """Pynput backend module for keyboard and mouse event handling."""
 from typing import Callable, Any, Union
 from src.backends.base import KeyboardBackend, MouseBackend, MouseTypeEvent,\
-    KeyboardTypeEvent, KeyboardCallList, MouseCallList
+    KeyboardTypeEvent, KbdSubList, MouseCallList
 from pynput import keyboard
 from pynput import mouse
 from pynput.keyboard import Key, KeyCode, Controller
@@ -12,7 +12,7 @@ PynputKey = Union[Key, KeyCode, None]
 PynputButton = Button
 
 
-class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
+class PynputKeyboardEvent(KeyboardBackend):
     """
     Pynput-based keyboard event handler.
     
@@ -26,39 +26,40 @@ class PynputKeyboardEvent(KeyboardBackend[PynputKey]):
         
         Sets up the keyboard controller and initializes the callback list.
         """
-        self.callbacks: KeyboardCallList = KeyboardCallList()
+        self.callbacks: KbdSubList = KbdSubList()
         self.controller = Controller()
 
-    def on_press(self, key: PynputKey) -> None:
+    def on_press(self, code: int, state: int, time: int) -> None:
         """
         Handle keyboard press events.
         
         Args:
-            key (PynputKey): The key that was pressed.
+            code (int): The scancode of the key that was pressed.
+            state (int): The state of the key.
+            time (int): The time of the event.
         """
-        self.notify_callbacks(key, KeyboardTypeEvent.PRESS) 
+        self.notify_callbacks(code, KeyboardTypeEvent.PRESS) 
 
-    def on_release(self, key: PynputKey) -> None:
+    def on_release(self, code: int, state: int, time: int) -> None:
         """
         Handle keyboard release events.
         
         Args:
-            key (PynputKey): The key that was released.
+            code (int): The scancode of the key that was released.
+            state (int): The state of the key.
+            time (int): The time of the event.
         """
-        self.notify_callbacks(key, KeyboardTypeEvent.RELEASE)
+        self.notify_callbacks(code, KeyboardTypeEvent.RELEASE)
     
-    def insert(self, key: str) -> None:
+    def press(self, code: int) -> None:
         """
         Simulate pressing a key.
         
         Args:
-            key (str): The key to press. Can be a special key name or character.
+            code (int): The scancode of the key to press.
         """
-        if hasattr(Key, key):
-            self.controller.press(getattr(Key, key))
-        else:
-            self.controller.press(key)
-    
+        pass
+        
     def add_callback(
         self, 
         cb: Callable[..., None], 

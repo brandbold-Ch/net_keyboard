@@ -1,4 +1,11 @@
-import sys
+from src.platform.linux.klevent import LinuxKbdListener
+from src.platform.base import start_process
+import threading
+
+listener = LinuxKbdListener().open()
+
+
+"""import sys
 from src.utils.config import e
 import threading
 from src.adapters.keyboard.pynput import PynputServer, PynputClient
@@ -35,7 +42,7 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-
+"""
 """def on_press(key):
     try:
         if isinstance(key, keyboard.KeyCode):
