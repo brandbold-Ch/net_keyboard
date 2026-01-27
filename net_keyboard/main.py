@@ -1,8 +1,18 @@
-from src.platform.linux.klevent import LinuxKbdListener
-from src.platform.base import start_process
-import threading
+from src.backends.keyboard import KeyboardEventListener
+from src.backends.base import KeyboardTypeEvent
 
-listener = LinuxKbdListener().open()
+def on_press(codes):
+    print("Pressed:", codes)
+    
+
+def on_release(codes):
+    print("Released:", codes)
+
+
+ev =  KeyboardEventListener("Linux")
+ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
+ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
+ev.listen()
 
 
 """import sys

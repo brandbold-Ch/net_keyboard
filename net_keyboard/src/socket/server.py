@@ -1,6 +1,6 @@
 """Server module for TCP communication."""
 from typing import Optional, Union
-from src.socket.base import NetworkChannel
+from src.socket.base import NetworkChannel, Address
 import socket
 
 
@@ -20,13 +20,10 @@ class TcpServer(NetworkChannel):
             host (str): The hostname or IP address to bind the server to.
             port (int): The port number to listen on.
         """
-        self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host: str = host
-        self.port: int = port
-        self.connection: Optional[socket.socket] = None
-        self.address: Optional[str] = None
+        self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.c_socket: Optional[socket.socket] = None
 
-        self.open()       
+        self.open((host, port))       
 
     def send(self, packet: Union[str, bytes]) -> None:
         """
@@ -38,14 +35,14 @@ class TcpServer(NetworkChannel):
         Raises:
             ConnectionError: If no active connection is available.
         """
-        if self.connection is None:
+        if self.c_socket is None:
             raise ConnectionError("No active connection. Cannot send packets")
 
         if isinstance(packet, str):
-            self.connection.sendall(packet.encode())
+            self.c_socket.sendall(packet.encode())
         
         elif isinstance(packet, bytes):
-            self.connection.sendall(packet)
+            self.c_socket.sendall(packet)
             
         else:
             raise TypeError("Invalid data type, cannot be sent over the network")
@@ -60,26 +57,25 @@ class TcpServer(NetworkChannel):
         Raises:
             ConnectionError: If no active connection is available.
         """
-        if self.connection is None:
-            raise ConnectionError("No active connection. Cannot receive packets")  
-        return self.connection.recv(size)
+        if self.c_socket is None:
+            self.c_socket =  self.s_socket.accept()[0]
+        return self.c_socket.recv(size)
 
-    def open(self) -> None:
+    def open(self, address: Address) -> None:
         """
         Establish the server connection and wait for client connections.
         
         Binds the server socket to the specified host and port, starts listening,
         and accepts the first incoming client connection.
         """
-        self._server.bind((self.host, self.port))
-        self._server.listen()
-        self.connection, self.address = self._server.accept()
+        self.s_socket.bind(address)
+        self.s_socket.listen()
 
     def close(self) -> None:
         """
         Close the server socket and disconnect from clients.
         """
-        self._server.close()
+        self.s_socket.close()
 
     def start(self) -> None:
         """

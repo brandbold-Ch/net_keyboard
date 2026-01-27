@@ -9,7 +9,7 @@ from struct import unpack
 CB_EVENT = Callable[[Tuple[int, int, int]], None]
 
 
-class LinuxKbdListener(IPCStreamReader):
+class Listener(IPCStreamReader):
 
     def __init__(
         self, 
@@ -34,10 +34,10 @@ class LinuxKbdListener(IPCStreamReader):
                 elif state == 0 and self.on_release:
                     self.on_release((code, state, time))
 
-        except EOFError:
-            pass
+        except Exception as e:
+            print(f"Listener error: {e}")
         finally:
             self.close()            
-        
+
     def close(self) -> None:
         pass

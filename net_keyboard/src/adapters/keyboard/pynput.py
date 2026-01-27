@@ -3,7 +3,7 @@ from typing import Optional
 from src.socket import TcpServer, TcpClient
 import threading
 from src.backends.base import KeyboardTypeEvent, MouseTypeEvent
-from src.backends.pynput import PynputKeyboardEvent, PynputMouseEvent, PynputKey
+from backends.keyboard import KeyboardEventListener, PynputMouseEvent, PynputKey
 from pynput.keyboard import Key, KeyCode
 
 
@@ -24,10 +24,10 @@ class PynputServer(TcpServer):
             port (int): The port number to listen on.
         """
         super().__init__(host, port)
-        self.keyboard_event = PynputKeyboardEvent()
+        self.keyboard_event = KeyboardEventListener()
         self.mouse_event = PynputMouseEvent()
 
-        self.keyboard_event.add_callback(self.keyboard_press, KeyboardTypeEvent.PRESS)
+        self.keyboard_event.add_subscriber(self.keyboard_press, KeyboardTypeEvent.PRESS)
 
     def keyboard_press(self, key: PynputKey) -> None:
         """
@@ -60,5 +60,5 @@ class PynputClient(TcpClient):
             port (int): The port number of the server.
         """
         super().__init__(host, port)
-        self.keyboard_event = PynputKeyboardEvent()
+        self.keyboard_event = KeyboardEventListener()
         self.mouse_event = PynputMouseEvent()

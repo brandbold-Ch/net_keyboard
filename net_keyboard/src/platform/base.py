@@ -1,14 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import NamedTuple, Union, Optional, cast
 from struct import calcsize
-from socket import AF_UNIX, SOCK_STREAM, _Address, socket as Socket
+from socket import AF_UNIX, SOCK_STREAM, socket as Socket
 from typing import Callable
-from _win32typing import PyHANDLE
-from win32file import (
-    CreateFile, ReadFile, CloseHandle,
-    GENERIC_READ, OPEN_EXISTING
-)
-from src.socket.base import NetworkChannel
+
+try:
+    from _win32typing import PyHANDLE
+    from win32file import (
+        CreateFile, ReadFile, CloseHandle,
+        GENERIC_READ, OPEN_EXISTING
+    )
+except ModuleNotFoundError:
+    pass
+
+from src.socket.base import NetworkChannel, Address
 import subprocess
 from threading import Thread
 import os
@@ -61,7 +66,7 @@ class SocketClient(NetworkChannel):
     def receive(self, size: int) -> str | bytes:
         raise NotImplementedError()
 
-    def open(self, address: _Address) -> None:
+    def open(self, address: Address) -> None:
         raise NotImplementedError()
 
     def close(self) -> None:
@@ -78,11 +83,11 @@ class SocketServer(NetworkChannel):
         raise NotImplementedError()
 
     def receive(self, size: int) -> str | bytes:
-        if not self.c_socket:
+        while not self.c_socket:
             self.c_socket = self.s_socket.accept()[0]
         return self.c_socket.recv(size)
 
-    def open(self, address: _Address) -> None:
+    def open(self, address: Address) -> None:
         self.s_socket.bind(address)
         self.s_socket.listen(1)
 
@@ -105,7 +110,7 @@ class PipeClient(NetworkChannel):
             raise RuntimeError("Pipe not opened")
         return ReadFile(self.handle.handle, size)[1]
 
-    def open(self, address: _Address) -> None:
+    def open(self, address: Address) -> None:
         self.handle = CreateFile(
             cast(str, address), 
             GENERIC_READ, 
@@ -129,7 +134,7 @@ class PipeServer(NetworkChannel):
     def receive(self, size: int) -> str | bytes:
         raise NotImplementedError()
 
-    def open(self, address: _Address) -> None:
+    def open(self, address: Address) -> None:
         raise NotImplementedError()
 
     def close(self) -> None:
@@ -172,7 +177,7 @@ class IPCProcessLauncher(ABC):
 
     def linux_channel_2(self) -> None:
         u_client: NetworkChannel = SocketClient()
-        u_client.open(self.shared)
+        #u_client.open(self.shared)
 
         if isinstance(self.client, str):
             self.start_process(self.client)
@@ -182,7 +187,7 @@ class IPCProcessLauncher(ABC):
     
     def windows_channel_1(self) -> None:
         u_server: NetworkChannel = PipeServer()
-        u_server.open(self.shared)
+        #u_server.open(self.shared)
         
         if isinstance(self.server, str):
             self.start_process(self.server)
