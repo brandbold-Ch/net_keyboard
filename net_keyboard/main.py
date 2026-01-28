@@ -1,7 +1,8 @@
 import os
 
 from src.backends.base import KeyboardTypeEvent
-from src.backends.keyboard import KeyboardEventListener
+from src.backends.linux import LinuxKeyboardEventListener
+from src.backends.windows import WindowsKeyboardEventListener
 
 
 def on_press(codes):
@@ -12,11 +13,19 @@ def on_release(codes):
     print("Released:", codes)
 
 
-ev = KeyboardEventListener(os.name.lower())
-ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
-ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
-ev.listen()
+OS = os.name.lower()
 
+if OS == "posix":
+    ev = LinuxKeyboardEventListener(OS)
+    ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
+    ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
+    ev.listen()
+
+elif OS == "nt":
+    ev = WindowsKeyboardEventListener(OS)
+    ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
+    ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
+    ev.listen()
 
 """import sys
 from src.utils.config import e

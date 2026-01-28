@@ -6,7 +6,7 @@ from src.platform.keyboard import Listener
 from src.platform.base import IPCProcessLauncher
 
 
-class KeyboardEventListener(KeyboardBackend):
+class LinuxKeyboardEventListener(KeyboardBackend):
     """
     Pynput-based keyboard event handler.
     

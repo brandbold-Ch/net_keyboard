@@ -1,14 +1,22 @@
-from typing import Optional
-from src.socket.base import NetworkChannel, Address
-from _win32typing import PyHANDLE
+from typing import Optional, Self
+
 from win32file import GENERIC_READ, OPEN_EXISTING, CloseHandle, CreateFile, ReadFile
+
+from src.socket.base import Address, NetworkChannel
+
+
+class PyHANDLE:
+    @property
+    def handle(self) -> int: ...
+    def Close(self) -> None: ...
+    def close(self) -> None: ...
+    def Detach(self) -> Self: ...
 
 
 class PipeClient(NetworkChannel):
-    
     def __init__(self) -> None:
         self.handle: Optional[PyHANDLE] = None
-    
+
     def send(self, packet: str | bytes) -> None:
         raise NotImplementedError()
 
@@ -18,15 +26,7 @@ class PipeClient(NetworkChannel):
         return ReadFile(self.handle.handle, size)[1]
 
     def open(self, address: Address) -> None:
-        self.handle = CreateFile(
-            address, 
-            GENERIC_READ, 
-            0, 
-            None, 
-            OPEN_EXISTING, 
-            0, 
-            None
-        )
+        self.handle = CreateFile(address, GENERIC_READ, 0, None, OPEN_EXISTING, 0, None)
 
     def close(self) -> None:
         if self.handle:
@@ -34,7 +34,6 @@ class PipeClient(NetworkChannel):
 
 
 class PipeServer(NetworkChannel):
-    
     def send(self, packet: str | bytes) -> None:
         raise NotImplementedError()
 
@@ -46,4 +45,3 @@ class PipeServer(NetworkChannel):
 
     def close(self) -> None:
         raise NotImplementedError()
-        
