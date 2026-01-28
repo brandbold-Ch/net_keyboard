@@ -56,7 +56,7 @@ class KeyboardEventListener(KeyboardBackend):
         
     def add_subscriber(
         self, 
-        cb: Callable[..., None], 
+        cb: Callable[[TUPLE_CODES], None], 
         kind: KeyboardTypeEvent
     ) -> None:
         """
@@ -72,6 +72,9 @@ class KeyboardEventListener(KeyboardBackend):
 
             case KeyboardTypeEvent.RELEASE:
                 self.callbacks.release.append(cb)
+                
+            case _:
+                raise ValueError(f"Unsupported keyboard event type: {kind}")
 
     def _emit_event(
         self, 
@@ -93,7 +96,10 @@ class KeyboardEventListener(KeyboardBackend):
             case KeyboardTypeEvent.RELEASE:
                 for cb in self.callbacks.release:
                     cb(codes)
-                    
+            
+            case _:
+                raise ValueError(f"Unsupported keyboard event type: {kind}")
+
     def listen(self) -> None:
         """
         Start listening for keyboard events.
@@ -101,13 +107,13 @@ class KeyboardEventListener(KeyboardBackend):
         Blocks until the listener thread is interrupted or terminated.
         """
         launcher = IPCProcessLauncher(
-            client="src/platform/linux/klevent" if self.os_name == "Linux" else
+            client="src/platform/linux/klevent" if self.os_name == "posix" else
                 "src/platform/windows/kwevent",
             server=Listener(
                 on_press=self.on_press,
                 on_release=self.on_release
             ),
-            shared="/tmp/keyboard_ipc.sock" if self.os_name == "Linux" else
+            shared="/tmp/keyboard_ipc.sock" if self.os_name == "posix" else
                 r"\\.\pipe\keyboard_ipc"
         )
         launcher.launch()

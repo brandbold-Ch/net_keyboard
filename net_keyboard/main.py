@@ -1,15 +1,18 @@
-from src.backends.keyboard import KeyboardEventListener
+import os
+
 from src.backends.base import KeyboardTypeEvent
+from src.backends.keyboard import KeyboardEventListener
+
 
 def on_press(codes):
     print("Pressed:", codes)
-    
+
 
 def on_release(codes):
     print("Released:", codes)
 
 
-ev =  KeyboardEventListener("Linux")
+ev = KeyboardEventListener(os.name.lower())
 ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
 ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
 ev.listen()
@@ -20,7 +23,7 @@ from src.utils.config import e
 import threading
 from src.adapters.keyboard.pynput import PynputServer, PynputClient
 
-
+ n
 def k1() -> None:
     server = PynputServer(e.SERVER_HOST, e.SERVER_PORT)
     server.run()
@@ -37,7 +40,7 @@ def main() -> None:
     if args[0] == "server":
         e.SERVER_HOST = args[1]
         e.SERVER_PORT = int(args[2])
-        e.dump_config() 
+        e.dump_config()
 
         threading.Thread(target=k1).start()
 
@@ -60,18 +63,18 @@ if __name__ == "__main__":
                 'char': key.char,
                 'vk': key.vk
             })
-            
+
         elif isinstance(key, keyboard.Key):
             print("Key pressed: ", {
                 'name': key.name,
                 'value': key.value
             })
-            
+
     except AttributeError:
         print('special key {0} pressed'.format(
             key))
-        
-    
+
+
 from pynput import keyboard
 listener = keyboard.Listener(
     on_press=on_press)
