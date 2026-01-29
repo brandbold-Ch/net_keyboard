@@ -13,7 +13,7 @@ def on_release(codes):
     print("Released:", codes)
 
 
-OS = os.name.lower()
+OS = os.name
 
 if OS == "posix":
     ev = LinuxKeyboardEventListener(OS)

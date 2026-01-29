@@ -108,7 +108,8 @@ class IPCProcessLauncher(ABC):
             Thread(target=self.client.open, args=(u_client.receive,)).start()
 
     def launch(self) -> None:
-        os_name = os.name.lower()
+        os_name = os.name
+
         if os_name == "posix":
             self.linux_channel_1()
             self.linux_channel_2()
@@ -116,3 +117,12 @@ class IPCProcessLauncher(ABC):
         elif os_name == "nt":
             self.windows_channel_1()
             self.windows_channel_2()
+
+
+class PosixResolve:
+    pass
+    
+    
+class NTResolve:
+    pass
+    

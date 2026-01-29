@@ -1,8 +1,6 @@
 """Pynput adapter module for keyboard and mouse event handling over network."""
-from typing import Optional
 from src.socket import TcpServer, TcpClient
-import threading
-from src.backends.base import KeyboardTypeEvent, MouseTypeEvent
+from src.backends.base import KeyboardTypeEvent
 from backends.keyboard import KeyboardEventListener, PynputMouseEvent, PynputKey
 from pynput.keyboard import Key, KeyCode
 
