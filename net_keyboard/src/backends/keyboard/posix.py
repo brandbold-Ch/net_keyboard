@@ -1,18 +1,18 @@
 """Pynput backend module for keyboard and mouse event handling."""
 
+import os
 from typing import Callable
 
 from src.backends.base import (
     TUPLE_CODES,
-    KbdSubList,
     KeyboardBackend,
+    KeyboardSubscribers,
     KeyboardTypeEvent,
 )
-from src.platform.base import IPCProcessLauncher
-from src.platform.keyboard import Listener
+from src.transport.ipc.tools import IPCProcessLauncher, KeyListener
 
 
-class WindowsKeyboardEventListener(KeyboardBackend):
+class PosixEventListener(KeyboardBackend):
     """
     Pynput-based keyboard event handler.
 
@@ -20,14 +20,14 @@ class WindowsKeyboardEventListener(KeyboardBackend):
     providing functionality to listen to keyboard events and manage callbacks.
     """
 
-    def __init__(self, os_name: str) -> None:
+    def __init__(self) -> None:
         """
         Initialize the Pynput keyboard event handler.
 
         Sets up the keyboard controller and initializes the callback list.
         """
-        self.os_name = os_name.lower()
-        self.callbacks: KbdSubList = KbdSubList()
+        self.os_name = os.name
+        self.subscribers: KeyboardSubscribers = KeyboardSubscribers()
 
     def on_press(self, codes: TUPLE_CODES) -> None:
         """
@@ -72,10 +72,10 @@ class WindowsKeyboardEventListener(KeyboardBackend):
         """
         match kind:
             case KeyboardTypeEvent.PRESS:
-                self.callbacks.press.append(cb)
+                self.subscribers.press.append(cb)
 
             case KeyboardTypeEvent.RELEASE:
-                self.callbacks.release.append(cb)
+                self.subscribers.release.append(cb)
 
             case _:
                 raise ValueError(f"Unsupported keyboard event type: {kind}")
@@ -90,11 +90,11 @@ class WindowsKeyboardEventListener(KeyboardBackend):
         """
         match kind:
             case KeyboardTypeEvent.PRESS:
-                for cb in self.callbacks.press:
+                for cb in self.subscribers.press:
                     cb(codes)
 
             case KeyboardTypeEvent.RELEASE:
-                for cb in self.callbacks.release:
+                for cb in self.subscribers.release:
                     cb(codes)
 
             case _:
@@ -107,13 +107,10 @@ class WindowsKeyboardEventListener(KeyboardBackend):
         Blocks until the listener thread is interrupted or terminated.
         """
         launcher = IPCProcessLauncher(
-            server="src/platform/linux/klevent"if self.os_name == "posix" else 
-                "src/platform/windows/kwevent",
-            client=Listener(
-                on_press=self.on_press, 
-                on_release=self.on_release
-            ),
-            shared="/tmp/keyboard_ipc.sock" if self.os_name == "posix" else 
-            r"\\.\pipe\keyboard_ipc",
+            client="posix/klevent" if self.os_name == "posix" else "nt/kwevent.exe",
+            server=KeyListener(on_press=self.on_press, on_release=self.on_release),
+            shared="/tmp/keyboard_ipc.sock"
+            if self.os_name == "posix"
+            else r"\\.\pipe\keyboard_ipc",
         )
         launcher.launch()

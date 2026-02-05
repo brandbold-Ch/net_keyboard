@@ -1,8 +1,9 @@
 import os
 
 from src.backends.base import KeyboardTypeEvent
-from src.backends.linux import LinuxKeyboardEventListener
-from src.backends.windows import WindowsKeyboardEventListener
+from src.backends.keyboard import NtEventListener, PosixEventListener
+from src.core.keyboard import MKVClient, MKVServer
+from src.utils.config import e
 
 
 def on_press(codes):
@@ -13,36 +14,32 @@ def on_release(codes):
     print("Released:", codes)
 
 
-OS = os.name.lower()
+OS = os.name
 
 if OS == "posix":
-    ev = LinuxKeyboardEventListener(OS)
+    ev = PosixEventListener()
     ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
     ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
     ev.listen()
 
 elif OS == "nt":
-    ev = WindowsKeyboardEventListener(OS)
+    ev = NtEventListener()
     ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
     ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
     ev.listen()
 
-"""import sys
-from src.utils.config import e
-import threading
-from src.adapters.keyboard.pynput import PynputServer, PynputClient
 
- n
 def k1() -> None:
-    server = PynputServer(e.SERVER_HOST, e.SERVER_PORT)
+    server = MKVServer(e.SERVER_HOST, e.SERVER_PORT, PosixEventListener())
     server.run()
 
 
 def k2() -> None:
-    client = PynputClient(e.CLIENT_HOST, e.CLIENT_PORT)
+    client = MKVClient(e.CLIENT_HOST, e.CLIENT_PORT, PosixEventListener())
     client.run()
 
 
+"""
 def main() -> None:
     args = sys.argv[1:]
 
@@ -63,30 +60,14 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 """
-"""def on_press(key):
-    try:
-        if isinstance(key, keyboard.KeyCode):
-            print("KeyCode pressed: ", {
-                'char': key.char,
-                'vk': key.vk
-            })
+# w = sys.argv
 
-        elif isinstance(key, keyboard.Key):
-            print("Key pressed: ", {
-                'name': key.name,
-                'value': key.value
-            })
+"""sleep(5)
 
-    except AttributeError:
-        print('special key {0} pressed'.format(
-            key))
+if w[1] == "0":
+    k1()
 
-
-from pynput import keyboard
-listener = keyboard.Listener(
-    on_press=on_press)
-listener.start()
-listener.join()
+elif w[1] == "1":
+    k2()
 """
