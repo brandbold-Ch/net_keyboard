@@ -1,8 +1,8 @@
 import os
 
 from src.backends.base import KeyboardTypeEvent
-from src.backends.keyboard import NtEventListener, PosixEventListener
-from src.core.keyboard import MKVClient, MKVServer
+from src.backends.keyboard import EventListener
+from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_keyboard
 from src.utils.config import e
 
 
@@ -14,22 +14,49 @@ def on_release(codes):
     print("Released:", codes)
 
 
+listener: EventListener
 OS = os.name
 
-if OS == "posix":
-    ev = PosixEventListener()
-    ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
-    ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
-    ev.listen()
 
-elif OS == "nt":
-    ev = NtEventListener()
-    ev.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
-    ev.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
-    ev.listen()
+def launcher_factory() -> IPCProcessLauncher:
+    kbds = scan_keyboard() # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
+
+    return (
+        IPCProcessLauncher(
+            client="bin/socket_unix/klevent"
+            if OS == "posix"
+            else "bin/pipe/kwevent.exe",
+            server=KeyListener(
+                on_press=listener.on_press,
+                on_release=listener.on_release,
+                device=str(kbds["usb-BY_Tech_Gaming_Keyboard-event-kbd"]),
+            ),
+            shared="/tmp/keyboard_ipc.sock"
+            if OS == "posix"
+            else r"\\.\pipe\keyboard_ipc",
+        )
+        if OS == "posix"
+        else IPCProcessLauncher(
+            server="bin/socket_unix/klevent"
+            if OS == "posix"
+            else "bin/pipe/kwevent.exe",
+            client=KeyListener(
+                on_press=listener.on_press, on_release=listener.on_release
+            ),
+            shared="/tmp/keyboard_ipc.sock"
+            if OS == "posix"
+            else r"\\.\pipe\keyboard_ipc",
+        )
+    )
 
 
-def k1() -> None:
+listener = EventListener(launcher_factory)
+listener.add_subscriber(on_press, kind=KeyboardTypeEvent.PRESS)
+listener.add_subscriber(on_release, kind=KeyboardTypeEvent.RELEASE)
+listener.listen()
+
+
+"""def k1() -> None:
     server = MKVServer(e.SERVER_HOST, e.SERVER_PORT, PosixEventListener())
     server.run()
 
@@ -37,7 +64,7 @@ def k1() -> None:
 def k2() -> None:
     client = MKVClient(e.CLIENT_HOST, e.CLIENT_PORT, PosixEventListener())
     client.run()
-
+"""
 
 """
 def main() -> None:

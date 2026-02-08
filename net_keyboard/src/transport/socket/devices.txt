@@ -1,3 +1,0 @@
-/dev/input/event4
-/dev/input/event6
-/dev/input/mouse1

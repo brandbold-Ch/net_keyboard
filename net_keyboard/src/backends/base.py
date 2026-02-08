@@ -3,9 +3,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Generic, List, Tuple, TypeAlias, TypeVar
+from typing import Callable, List, Tuple, TypeAlias
 
-B = TypeVar("B")
 EventList: TypeAlias = List[Callable[..., None]]
 TUPLE_CODES: TypeAlias = Tuple[int, int, int]
 
@@ -37,22 +36,6 @@ class KeyboardSubscribers:
 
     press: EventList = field(default_factory=list)
     release: EventList = field(default_factory=list)
-
-
-@dataclass
-class MouseSubscribers:
-    """
-    Container for mouse event callbacks.
-
-    Attributes:
-        move (CallList): List of callbacks for mouse movement events.
-        click (CallList): List of callbacks for mouse click events.
-        scroll (CallList): List of callbacks for mouse scroll events.
-    """
-
-    move: EventList = field(default_factory=list)
-    click: EventList = field(default_factory=list)
-    scroll: EventList = field(default_factory=list)
 
 
 class KeyboardBackend(ABC):
@@ -102,66 +85,5 @@ class KeyboardBackend(ABC):
     def listen(self) -> None:
         """
         Start listening for keyboard events.
-        """
-        pass
-
-
-class MouseBackend(Generic[B], ABC):
-    """
-    Abstract base class for mouse backend implementations.
-
-    This class defines the interface that all mouse backend implementations
-    must follow for handling mouse events.
-    """
-
-    @abstractmethod
-    def on_move(self, mouse_position_x: int, mouse_position_y: int) -> None:
-        """
-        Handle mouse movement events.
-
-        Args:
-            mouse_position_x (int): The X coordinate of the mouse position.
-            mouse_position_y (int): The Y coordinate of the mouse position.
-        """
-        pass
-
-    @abstractmethod
-    def on_click(
-        self, mouse_position_x: int, mouse_position_y: int, button: B, pressed: bool
-    ) -> None:
-        """
-        Handle mouse click events.
-
-        Args:
-            mouse_position_x (int): The X coordinate of the click position.
-            mouse_position_y (int): The Y coordinate of the click position.
-            button (B): The mouse button that was clicked.
-            pressed (bool): True if button was pressed, False if released.
-        """
-        pass
-
-    @abstractmethod
-    def on_scroll(
-        self,
-        mouse_position_x: int,
-        mouse_position_y: int,
-        scroll_change_x: int,
-        scroll_change_y: int,
-    ) -> None:
-        """
-        Handle mouse scroll events.
-
-        Args:
-            mouse_position_x (int): The X coordinate of the scroll position.
-            mouse_position_y (int): The Y coordinate of the scroll position.
-            scroll_change_x (int): The horizontal scroll change amount.
-            scroll_change_y (int): The vertical scroll change amount.
-        """
-        pass
-
-    @abstractmethod
-    def listen(self) -> None:
-        """
-        Start listening for mouse events.
         """
         pass

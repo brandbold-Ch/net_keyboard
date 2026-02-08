@@ -1,3 +1,4 @@
-from .artifacts import PipeClient, PipeServer
+from .client import PipeClient
+from .server import PipeServer
 
 __all__ = ["PipeClient", "PipeServer"]

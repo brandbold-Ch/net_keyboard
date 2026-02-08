@@ -4,10 +4,18 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from struct import calcsize, unpack
 from threading import Thread
-from typing import Callable, NamedTuple, Optional, Tuple, TypeAlias, Union
+from typing import (
+    Callable,
+    Dict,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    TypeAlias,
+    Union,
+)
 
-CB_EVENT: TypeAlias = Callable[[Tuple[int, int, int]], None]
-
+from src.transport.base import NetworkChannel
 
 FMT: str = "<H B Q"
 SIZE: int = calcsize(FMT)
@@ -18,8 +26,10 @@ class FormatSpec(NamedTuple):
     size: int
 
 
-GLOBAL_FORMAT_SPEC = FormatSpec(fmt=FMT, size=SIZE)
+CB_EVENT: TypeAlias = Callable[[Tuple[int, int, int]], None]
 CALLBACK_READER: TypeAlias = Callable[[int], str | bytes]
+GLOBAL_FORMAT = FormatSpec(fmt=FMT, size=SIZE)
+CHANNEL_ROLE = Literal["client", "server"]
 
 
 def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
@@ -34,7 +44,36 @@ def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
     return buffer
 
 
+def scan_keyboard() -> Dict[str, Path]:
+    by_id = Path("/dev/input/by-id")
+    keyboards: Dict[str, Path] = {}
+
+    if not by_id.exists():
+        return keyboards
+
+    for dir in by_id.iterdir():
+        if not dir.is_symlink():
+            continue
+
+        name = dir.name
+        if not name.endswith("kbd"):
+            continue
+
+        try:
+            target = dir.resolve()
+        except FileNotFoundError:
+            continue
+
+        keyboards[name] = target
+
+    return keyboards
+
+
 class IPCStreamReader(ABC):
+    @abstractmethod
+    def device(self) -> Optional[str]:
+        pass
+
     @abstractmethod
     def open(self, raw: CALLBACK_READER) -> None:
         pass
@@ -44,93 +83,112 @@ class IPCStreamReader(ABC):
         pass
 
 
-AgentSource: TypeAlias = Union[IPCStreamReader, str]
+AGENT_SOURCE: TypeAlias = Union[IPCStreamReader, str]
+
+
+class ChannelFactory:
+    @staticmethod
+    def create(role: CHANNEL_ROLE) -> NetworkChannel:
+        platform: str = os.name
+
+        match platform:
+            case "posix":
+                if role == "client":
+                    from src.transport.socket_unix import SocketUnixClient
+
+                    return SocketUnixClient()
+
+                elif role == "server":
+                    from src.transport.socket_unix import SocketUnixServer
+
+                    return SocketUnixServer()
+
+            case "nt":
+                if role == "client":
+                    from src.transport.pipe import PipeClient
+
+                    return PipeClient()
+
+                elif role == "server":
+                    from src.transport.pipe import PipeServer
+
+                    return PipeServer()
+
+            case _:
+                raise RuntimeError(f"Unsupported OS: {platform}")
 
 
 class IPCProcessLauncher(ABC):
-    def __init__(self, client: AgentSource, server: AgentSource, shared: str) -> None:
+    def __init__(self, client: AGENT_SOURCE, server: AGENT_SOURCE, shared: str) -> None:
         self.client = client
         self.server = server
         self.shared = shared
 
-        self.base_path = Path(__file__).resolve().parent
+        self.base_path = Path(__file__).resolve().parents[2]
 
-    def start_process(self, exec: str) -> None:
+    def _cleanup(self, address: str) -> None:
+        path = Path(address)
+        if path.exists():
+            path.unlink()
+
+    def _set_readables(self) -> None:
+        build_dir = self.base_path / "bin"
+        build_dir.mkdir(parents=True, exist_ok=True)
+
+        device_txt = build_dir / "device.txt"
+        shared_txt = build_dir / "shared.txt"
+
+        shared_txt.write_text(self.shared, encoding="utf-8")
+
+        if isinstance(self.client, IPCStreamReader):
+            device_txt.write_text(str(self.client.device()), encoding="utf-8")
+
+        if isinstance(self.server, IPCStreamReader):
+            device_txt.write_text(str(self.server.device()), encoding="utf-8")
+
+    def _launch_process(self, exec: str) -> None:
         try:
             subprocess.Popen([self.base_path / exec])
         except Exception as e:
             print(f"{__file__} -> {e}")
 
-    def posix_channel_1(self) -> None:
-        from src.transport.socket import SocketServer
+    def _launch_channel(self, role: CHANNEL_ROLE, agent: AGENT_SOURCE) -> None:
+        if isinstance(agent, str):
+            self._launch_process(agent)
 
-        u_server: SocketServer = SocketServer()
-        u_server.open(self.shared)
+        elif isinstance(agent, IPCStreamReader):
+            channel: NetworkChannel = ChannelFactory.create(role)
+            channel.open(self.shared)
 
-        if isinstance(self.server, str):
-            self.start_process(self.server)
-
-        elif isinstance(self.server, IPCStreamReader):
-            Thread(target=self.server.open, args=(u_server.receive,)).start()
-
-    def posix_channel_2(self) -> None:
-        from src.transport.socket import SocketClient
-
-        u_client: SocketClient = SocketClient()
-        # u_client.open(self.shared)
-
-        if isinstance(self.client, str):
-            self.start_process(self.client)
-
-        elif isinstance(self.client, IPCStreamReader):
-            Thread(target=self.client.open, args=(u_client.receive,)).start()
-
-    def nt_channel_1(self) -> None:
-        from src.transport.pipe import PipeServer
-
-        u_server: PipeServer = PipeServer()
-        # u_server.open(self.shared)
-
-        if isinstance(self.server, str):
-            self.start_process(self.server)
-
-        elif isinstance(self.server, IPCStreamReader):
-            Thread(target=self.server.open, args=(u_server.receive,)).start()
-
-    def nt_channel_2(self) -> None:
-        from src.transport.pipe import PipeClient
-
-        u_client: PipeClient = PipeClient()
-        u_client.open(self.shared)
-
-        if isinstance(self.client, str):
-            self.start_process(self.client)
-
-        elif isinstance(self.client, IPCStreamReader):
-            Thread(target=self.client.open, args=(u_client.receive,)).start()
+            Thread(target=agent.open, args=(channel.receive,)).start()
 
     def launch(self) -> None:
-        os_name = os.name
+        if os.name == "posix":
+            self._cleanup(self.shared)
 
-        if os_name == "posix":
-            self.posix_channel_1()
-            self.posix_channel_2()
+        self._set_readables()
 
-        elif os_name == "nt":
-            self.nt_channel_1()
-            self.nt_channel_2()
+        self._launch_channel("server", self.server)
+        self._launch_channel("client", self.client)
 
 
 class KeyListener(IPCStreamReader):
     def __init__(
-        self, on_press: Optional[CB_EVENT] = None, on_release: Optional[CB_EVENT] = None
+        self,
+        on_press: Optional[CB_EVENT] = None,
+        on_release: Optional[CB_EVENT] = None,
+        device: Optional[str] = None,
     ) -> None:
-        self.on_press: Optional[CB_EVENT] = on_press
-        self.on_release: Optional[CB_EVENT] = on_release
+        self._device = device
+        self.on_press = on_press
+        self.on_release = on_release
         self._running: bool = True
 
+    def device(self) -> Optional[str]:
+        return self._device
+
     def open(self, raw: CALLBACK_READER) -> None:
-        spec = GLOBAL_FORMAT_SPEC
+        spec = GLOBAL_FORMAT
 
         try:
             while self._running:
@@ -144,9 +202,9 @@ class KeyListener(IPCStreamReader):
                     self.on_release((code, state, time))
 
         except Exception as e:
-            print(f"Listener error: {e}")
+            print(f"KeyListener error: {e}")
         finally:
             self.close()
 
     def close(self) -> None:
-        pass
+        self._running = False

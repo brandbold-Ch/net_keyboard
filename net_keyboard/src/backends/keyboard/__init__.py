@@ -1,4 +1,3 @@
-from .nt import NtEventListener
-from .posix import PosixEventListener
+from .listener import EventListener
 
-__all__ = ["PosixEventListener", "NtEventListener"]
+__all__ = ["EventListener"]
