@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QW
 from src.backends.keyboard import EventListener
 from src.core.mkv_client import MKVClient
 from src.core.mkv_server import MKVServer
-from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_keyboard
+from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_device
 from src.utils.config import e
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -19,8 +19,8 @@ OS = os.name
 
 
 def launcher_factory() -> IPCProcessLauncher:
-    kbds = (
-        scan_keyboard()
+    kbds = scan_device(
+        "kbd"
     )  # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
 
     return (

@@ -1,4 +1,10 @@
-"""Pynput adapter module for keyboard and mouse event handling over network."""
+"""TCP client adapter for receiving and simulating keyboard events.
+
+This module contains MKVClient which connects to a TCP server that emits
+serialized keyboard events. MKVClient deserializes incoming packets using
+the project's GLOBAL_FORMAT and forwards events to a local keyboard
+backend for simulation.
+"""
 
 import struct
 from typing import Optional
@@ -11,11 +17,15 @@ K_LISTENER = Optional[KeyboardBackend]
 
 
 class MKVClient(TcpClient):
-    """
-    TCP client adapter for simulating keyboard and mouse events using Pynput.
+    """Client adapter that receives serialized keyboard events from server.
 
-    This class connects to a TCP server, receives keyboard and mouse events,
-    and simulates them locally using the Pynput library.
+    MKVClient connects to a remote TcpServer and continuously reads fixed
+    size packets according to GLOBAL_FORMAT. Decoded events can be passed
+    to a local KeyboardBackend instance for local simulation.
+
+    Attributes:
+        keyboard_listener (Optional[KeyboardBackend]): Optional backend used
+            to simulate or dispatch received keyboard events locally.
     """
 
     def __init__(
@@ -24,17 +34,24 @@ class MKVClient(TcpClient):
         port: int,
         keyboard_listener: K_LISTENER = None,
     ) -> None:
-        """
-        Initialize the Pynput client.
+        """Initialize the TCP client and optionally set a keyboard backend.
 
         Args:
-            host (str): The hostname or IP address of the server to connect to.
-            port (int): The port number of the server.
+            host: Hostname or IP address of the server to connect to.
+            port: Port number of the server.
+            keyboard_listener: Optional backend to receive simulated events.
         """
         super().__init__(host, port)
         self.keyboard_listener = keyboard_listener
 
     def start(self) -> None:
+        """Run the client's receive loop and dispatch incoming events.
+
+        This method blocks and reads exactly GLOBAL_FORMAT.size bytes from the
+        socket, unpacks the tuple and (currently) prints the values. In a
+        full implementation the decoded event should be forwarded to the
+        configured keyboard backend.
+        """
         spec = GLOBAL_FORMAT
 
         while True:

@@ -1,24 +1,26 @@
 #include <linux/input-event-codes.h>
+#include <linux/input.h>
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <linux/input.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <limits.h>
 #include <libgen.h>
+#include <sys/time.h>
 
 #define MAX_PATH 256
 
 #pragma pack(push, 1)
 struct KeyEvent {
-    u_int16_t code;
-    u_int8_t state;
-    u_int64_t time;
+    uint16_t code;
+    uint8_t  state;
+    uint64_t time;
 };
 #pragma pack(pop)
 
@@ -42,34 +44,56 @@ int read_path_file(const char *filename, char *out, size_t out_size) {
     }
 
     out[strcspn(out, "\r\n")] = 0;
-
     fclose(f);
     return 0;
 }
 
 int client_socket(const char *shared_path) {
-    int _socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    struct sockaddr_un addr = {0};
+    int s = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (s < 0) return -1;
 
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, shared_path, sizeof(addr.sun_path));
 
-    if (connect(_socket, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        close(_socket);
+    if (strlen(shared_path) >= sizeof(addr.sun_path)) {
+        close(s);
+        errno = ENAMETOOLONG;
         return -1;
     }
 
-    return _socket;
+    strcpy(addr.sun_path, shared_path);
+
+    socklen_t len = offsetof(struct sockaddr_un, sun_path) + strlen(addr.sun_path) + 1;
+
+    if (connect(s, (struct sockaddr*)&addr, len) < 0) {
+        close(s);
+        return -1;
+    }
+
+    return s;
 }
 
 struct KeyEvent kev_packet(struct input_event ev) {
     struct KeyEvent kev;
-
-    kev.code = ev.code;
+    kev.code  = ev.code;
     kev.state = ev.value;
-    kev.time = ev.time.tv_sec * 1000000 + ev.time.tv_usec;
-
+    kev.time  = (uint64_t)ev.time.tv_sec * 1000000ULL + (uint64_t)ev.time.tv_usec;
     return kev;
+}
+
+ssize_t read_full(int fd, void *buf, size_t size) {
+    size_t off = 0;
+    while (off < size) {
+        ssize_t n = read(fd, (char*)buf + off, size - off);
+        if (n < 0) {
+            if (errno == EINTR) continue;
+            return -1;
+        }
+        if (n == 0) return 0; // EOF
+        off += n;
+    }
+    return off;
 }
 
 int main() {
@@ -85,8 +109,9 @@ int main() {
     char shared_cfg[PATH_MAX];
     char device_cfg[PATH_MAX];
 
-    snprintf(shared_cfg, sizeof(shared_cfg), "%s/../shared.txt", exe_dir);
-    snprintf(device_cfg, sizeof(device_cfg), "%s/../device.txt", exe_dir);
+    // Ajusta esto según tu layout real:
+    snprintf(shared_cfg, sizeof(shared_cfg), "%s/../../shared.txt", exe_dir);
+    snprintf(device_cfg, sizeof(device_cfg), "%s/../../device.txt", exe_dir);
 
     if (read_path_file(shared_cfg, shared_path, sizeof(shared_path))) {
         perror("read shared.txt");
@@ -100,7 +125,7 @@ int main() {
 
     int fd = open(device_path, O_RDONLY);
     if (fd < 0) {
-        perror("open");
+        perror("open device");
         return 1;
     }
 
@@ -113,15 +138,24 @@ int main() {
 
     struct input_event ev;
 
-    while (1) {
-        ssize_t n = read(fd, &ev, sizeof(ev));
+    for (;;) {
+        ssize_t n = read_full(fd, &ev, sizeof(ev));
+        if (n <= 0) {
+            perror("read input");
+            break;
+        }
 
-        if (n == sizeof(ev) && ev.type == EV_KEY) {
+        if (ev.type == EV_KEY) {
             struct KeyEvent kev = kev_packet(ev);
-            write(client, &kev, sizeof(kev));
+            ssize_t w = write(client, &kev, sizeof(kev));
+            if (w != sizeof(kev)) {
+                perror("write socket");
+                break;
+            }
         }
     }
 
+    close(client);
     close(fd);
     return 0;
 }

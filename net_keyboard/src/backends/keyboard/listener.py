@@ -1,4 +1,11 @@
-"""Pynput backend module for keyboard and mouse event handling."""
+"""Keyboard backend that receives input events via an IPC launcher.
+
+This module provides an EventListener implementation of the
+``KeyboardBackend`` interface that integrates with the project's IPC
+launcher. Instead of using pynput directly, this listener launches a
+helper process (via ``IPCProcessLauncher``) which reads device events and
+forwards them to the EventListener through the IPC channel.
+"""
 
 from typing import Callable
 
@@ -12,41 +19,48 @@ from src.transport.ipc.tools import IPCProcessLauncher
 
 
 class EventListener(KeyboardBackend):
-    """
-    Pynput-based keyboard event handler.
+    """IPC-backed keyboard event handler.
 
-    This class implements keyboard event handling using the pynput library,
-    providing functionality to listen to keyboard events and manage callbacks.
+    The EventListener implements the project-wide ``KeyboardBackend``
+    interface. It stores subscribers for press/release events and uses an
+    ``IPCProcessLauncher`` factory to start a helper process that reads
+    low-level device events and dispatches them through the IPC channel.
+
+    The helper process is expected to send tuples of integers matching the
+    project's GLOBAL_FORMAT (code, state, time). EventListener decodes
+    those tuples and forwards them to registered callbacks.
     """
 
     def __init__(self, launcher_factory: Callable[[], IPCProcessLauncher]) -> None:
         """
-        Initialize the Pynput keyboard event handler.
+        Initialize the keyboard listener with an IPC launcher factory.
 
-        Sets up the keyboard controller and initializes the callback list.
+        The ``launcher_factory`` callable should return an instance of
+        ``IPCProcessLauncher`` configured to launch the helper process that
+        reads device events and exposes them through the IPC channel.
+        The returned launcher will be used by ``listen`` to start the
+        event source.
         """
         self._subscribers: KeyboardSubscribers = KeyboardSubscribers()
         self._launcher_factory = launcher_factory
 
     def on_press(self, codes: TUPLE_CODES) -> None:
         """
-        Handle keyboard press events.
+        Handle keyboard press events and dispatch to subscribers.
 
         Args:
-            code (int): The scancode of the key that was pressed.
-            state (int): The state of the key.
-            time (int): The time of the event.
+            codes: A tuple of three integers (code, state, time) representing
+                the low-level event received from the IPC helper.
         """
         self._emit_event(codes, KeyboardTypeEvent.PRESS)
 
     def on_release(self, codes: TUPLE_CODES) -> None:
         """
-        Handle keyboard release events.
+        Handle keyboard release events and dispatch to subscribers.
 
         Args:
-            code (int): The scancode of the key that was released.
-            state (int): The state of the key.
-            time (int): The time of the event.
+            codes: A tuple of three integers (code, state, time) representing
+                the low-level event received from the IPC helper.
         """
         self._emit_event(codes, KeyboardTypeEvent.RELEASE)
 
@@ -84,8 +98,8 @@ class EventListener(KeyboardBackend):
         Notify all registered callbacks for a keyboard event.
 
         Args:
-            key (PynputKey): The key involved in the event.
-            kind (KeyboardTypeEvent): The type of keyboard event.
+            codes: A tuple (code, state, time) describing the event.
+            kind: The type of keyboard event (PRESS or RELEASE).
         """
         match kind:
             case KeyboardTypeEvent.PRESS:

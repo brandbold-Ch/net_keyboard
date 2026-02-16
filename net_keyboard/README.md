@@ -4,77 +4,71 @@ Una aplicación para compartir eventos de teclado y ratón sobre TCP, permitiend
 
 ## Estado del Proyecto
 
-⚠️ **ACTUALMENTE INSERVIBLE** - El proyecto se encuentra en una fase de refactorización arquitectónica.
+⚠️ **ACTUALMENTE EN REFACTORIZACIÓN** - El proyecto está siendo migrado a una arquitectura que extrae eventos de entrada mediante componentes nativos en C y los expone a la aplicación a través de un canal IPC.
 
-Se está implementando una característica importante que permitirá escuchar los eventos de entrada desde **C** para obtener mayor precisión y mejor rendimiento. Por esta razón, la arquitectura se ha reorganizado significativamente y el proyecto no es funcional en este momento.
+Por esa razón la estructura interna ha cambiado y muchas piezas todavía no son funcionales. El objetivo de la refactorización es mejorar precisión, latencia y estabilidad de la captura de eventos.
 
-Una vez completada la integración con C, el proyecto recuperará su funcionalidad completa.
+## Arquitectura Actual (resumen)
 
-## Arquitectura Actual
-
-El proyecto está estructurado en los siguientes módulos:
+El código ha sido reorganizado para separar claramente las responsabilidades:
 
 ```
 src/
-├── tcp/              # Módulo base de comunicación TCP
-│   ├── base.py       # Clase abstracta TCP
-│   ├── client.py     # Cliente TCP
-│   └── server.py     # Servidor TCP
-├── backends/         # Implementaciones de captura de eventos
+├── core/             # Adaptadores de alto nivel (servidor/cliente) y lógica central
+│   ├── mkv_server.py  # TCP server adapter: serialize/forward events
+│   └── mkv_client.py  # TCP client adapter: receive/deserializar eventos
+├── backends/         # Abstracción de backends y listeners
 │   ├── base.py       # Clases abstractas de teclado y ratón
-│   ├── pynput.py     # Implementación con Pynput
-│   └── evdev.py      # Implementación con Evdev (Linux)
-├── adapters/         # Adaptadores que combinan TCP con backends
-│   └── keyboard/
-│       └── pynput.py # Adaptador servidor/cliente con Pynput
-├── utils/            # Utilidades
-│   └── config.py     # Gestión de configuración
-├── cli.py            # Interfaz de línea de comandos
-└── gui.py            # Interfaz gráfica
+│   ├── keyboard/     # Listener que integra con el IPC/launcher (native agent)
+│   └── mouse/        # Placeholder para backends de ratón
+├── transport/        # Canales de transporte (TCP, Unix sockets, pipes, IPC helpers)
+├── utils/            # Utilidades (configuración, etc.)
+└── bin/              # Binaries nativos/auxiliares (C agents) y artefactos
 ```
 
-## Uso Previsto
+Notas:
+- La integración con procesos nativos en C se realiza mediante un `IPCProcessLauncher` que lanza agentes nativos y expone los eventos por canales (Unix socket / pipe según la plataforma).
+- Las referencias previas a `pynput` han sido retiradas: la captura de eventos se realizará desde el agente nativo o, en sistemas Linux, por adaptadores que lean desde dispositivos de entrada (evdev) cuando aplique.
 
-Una vez que el proyecto esté funcional, se utilizará de la siguiente manera:
+## Uso Previsto (ejemplo actualizado)
 
-### Como Servidor (Captura de eventos locales)
+Ejemplos mínimos para utilizar los adaptadores actuales que se encuentran en `src/core`:
+
+### Como Servidor (captura y reenvío de eventos)
 
 ```python
-from src.adapters.keyboard.pynput import PynputServer
+from src.core.mkv_server import MKVServer
+from src.backends.keyboard import EventListener
 
 # Crear servidor en localhost:5000
-server = PynputServer(host="0.0.0.0", port=5000)
+listener_factory = lambda: ...  # factory que devuelve IPCProcessLauncher configurado
+keyboard_listener = EventListener(listener_factory)
+server = MKVServer(host="0.0.0.0", port=5000, keyboard_listener=keyboard_listener)
 
-# Ejecutar servidor y capturar eventos
-server.run()
+# Iniciar servidor (arranque del listener IPC se hace dentro de server.start)
+server.start()
 ```
 
-### Como Cliente (Simular eventos remotos)
+### Como Cliente (recibir eventos y simularlos localmente)
 
 ```python
-from src.adapters.keyboard.pynput import PynputClient
+from src.core.mkv_client import MKVClient
 
 # Conectar a servidor en localhost:5000
-client = PynputClient(host="127.0.0.1", port=5000)
+client = MKVClient(host="127.0.0.1", port=5000)
 
-# Ejecutar cliente y recibir eventos
-client.run()
+# Ejecutar cliente (recibe paquetes y los procesa)
+client.start()
 ```
 
 ## Configuración
 
-La configuración se gestiona mediante el archivo `config.json` en la raíz del proyecto:
+La configuración se gestiona mediante el archivo `config.json` en la raíz del proyecto (ejemplo):
 
 ```json
 {
-  "server": {
-    "host": "0.0.0.0",
-    "port": 5000
-  },
-  "client": {
-    "host": "127.0.0.1",
-    "port": 5000
-  },
+  "server": { "host": "0.0.0.0", "port": 5000 },
+  "client": { "host": "127.0.0.1", "port": 5000 },
   "connections": []
 }
 ```
@@ -82,10 +76,8 @@ La configuración se gestiona mediante el archivo `config.json` en la raíz del 
 ## Características Planificadas
 
 - ✅ Arquitectura base TCP (Cliente/Servidor)
-- ✅ Backends para captura de eventos (Pynput, Evdev)
-- ✅ Adaptadores para integración de TCP + backends
-- ✅ Sistema de configuración
-- 🔄 **Integración con C para mayor precisión** (en progreso)
+- ✅ Abstracciones de backend para teclado/ratón
+- 🔄 Integración con C / agentes nativos para lectura de eventos (en progreso)
 - ⏳ Interfaz gráfica funcional
 - ⏳ Interfaz de línea de comandos funcional
 - ⏳ Soporte multi-conexión
@@ -93,18 +85,17 @@ La configuración se gestiona mediante el archivo `config.json` en la raíz del 
 
 ## Próximas Etapas
 
-1. Completar la integración con C para escuchar eventos desde el kernel
-2. Actualizar la arquitectura para utilizar el nuevo sistema de escucha de eventos
-3. Realizar pruebas de precisión y rendimiento
-4. Restaurar funcionalidad completa del proyecto
-5. Implementar interfaz gráfica y CLI
+1. Completar la integración con los agentes nativos en C para escuchar eventos de forma fiable
+2. Ajustar los launchers IPC y los agentes para cada plataforma (Linux/Windows)
+3. Probar y validar la latencia/precisión de los eventos
+4. Restaurar y validar las interfaces (CLI/GUI)
 
 ## Notas Técnicas
 
-La decisión de integrar C se toma para:
+La migración a agentes nativos busca:
 - Mayor precisión en la captura de eventos
 - Mejor rendimiento y menor latencia
-- Acceso directo a eventos del kernel en lugar de abstracciones de librerías
+- Acceso directo a eventos del kernel (cuando aplique)
 - Mayor control sobre el timing y secuenciamiento de eventos
 
 ## Licencia

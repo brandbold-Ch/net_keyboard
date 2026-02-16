@@ -2,7 +2,7 @@ import os
 
 from src.backends.base import KeyboardTypeEvent
 from src.backends.keyboard import EventListener
-from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_keyboard
+from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_device
 from src.utils.config import e
 
 
@@ -19,13 +19,13 @@ OS = os.name
 
 
 def launcher_factory() -> IPCProcessLauncher:
-    kbds = scan_keyboard() # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
+    kbds = scan_device("kbd") # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
 
     return (
         IPCProcessLauncher(
-            client="bin/socket_unix/klevent"
+            client="bin/socket_unix/keyboard/out"
             if OS == "posix"
-            else "bin/pipe/kwevent.exe",
+            else "bin/pipe/keyboard/out.exe",
             server=KeyListener(
                 on_press=listener.on_press,
                 on_release=listener.on_release,
@@ -37,9 +37,9 @@ def launcher_factory() -> IPCProcessLauncher:
         )
         if OS == "posix"
         else IPCProcessLauncher(
-            server="bin/socket_unix/klevent"
+            server="bin/socket_unix/keyboard/out"
             if OS == "posix"
-            else "bin/pipe/kwevent.exe",
+            else "bin/pipe/keyboard/out.exe",
             client=KeyListener(
                 on_press=listener.on_press, on_release=listener.on_release
             ),
