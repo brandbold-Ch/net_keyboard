@@ -10,7 +10,7 @@ from socket import AF_UNIX, SOCK_STREAM
 from socket import socket as Socket
 from typing import Optional
 
-from src.transport.base import Address, NetworkChannel
+from src.transport.base import Address, NetworkChannel, Packet
 
 
 class SocketUnixServer(NetworkChannel):
@@ -24,7 +24,7 @@ class SocketUnixServer(NetworkChannel):
         self.s_socket: Socket = Socket(AF_UNIX, SOCK_STREAM)
         self.c_socket: Optional[Socket] = None
 
-    def send(self, packet: str | bytes) -> None:
+    def send(self, packet: Packet) -> None:
         """Send bytes to the connected client.
 
         Raises NotImplementedError because this simple implementation writes
@@ -32,7 +32,7 @@ class SocketUnixServer(NetworkChannel):
         """
         raise NotImplementedError()
 
-    def receive(self, size: int) -> str | bytes:
+    def receive(self, size: int) -> Packet:
         """Receive up to ``size`` bytes from the accepted client connection.
 
         If no client has connected yet the method blocks until accept() returns

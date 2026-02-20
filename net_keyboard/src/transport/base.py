@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, TypeAlias, Union
 
 Address: TypeAlias = tuple[Any, ...] | str
+Packet: TypeAlias = Union[str, bytes]
 
 
 class NetworkChannel(ABC):
@@ -15,7 +16,7 @@ class NetworkChannel(ABC):
     """
 
     @abstractmethod
-    def send(self, packet: Union[str, bytes]) -> None:
+    def send(self, packet: Packet) -> None:
         """
         Send a data packet.
 
@@ -25,7 +26,7 @@ class NetworkChannel(ABC):
         pass
 
     @abstractmethod
-    def receive(self, size: int) -> str | bytes:
+    def receive(self, size: int) -> Packet:
         """
         Receive data from the connection.
 

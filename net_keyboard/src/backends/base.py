@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, auto
 from typing import Callable, List, Tuple, TypeAlias
 
 EventList: TypeAlias = List[Callable[..., None]]
@@ -12,16 +12,16 @@ TUPLE_CODES: TypeAlias = Tuple[int, int, int]
 class MouseTypeEvent(Enum):
     """Enumeration of mouse event types."""
 
-    SCROLL = "scroll"
-    MOVE = "move"
-    CLICK = "click"
+    SCROLL = auto()
+    MOVE = auto()
+    CLICK = auto()
 
 
 class KeyboardTypeEvent(Enum):
     """Enumeration of keyboard event types."""
 
-    PRESS = "press"
-    RELEASE = "release"
+    PRESS = auto()
+    RELEASE = auto()
 
 
 @dataclass
@@ -67,7 +67,7 @@ class KeyboardBackend(ABC):
         pass
 
     @abstractmethod
-    def press(self, code: int) -> None:
+    def press(self, codes: TUPLE_CODES) -> None:
         """
         Simulate pressing a key.
 

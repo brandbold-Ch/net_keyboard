@@ -64,7 +64,7 @@ class EventListener(KeyboardBackend):
         """
         self._emit_event(codes, KeyboardTypeEvent.RELEASE)
 
-    def press(self, code: int) -> None:
+    def press(self, codes: TUPLE_CODES) -> None:
         """
         Simulate pressing a key.
 

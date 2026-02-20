@@ -3,7 +3,8 @@ import os
 from src.backends.base import KeyboardTypeEvent
 from src.backends.keyboard import EventListener
 from src.transport.ipc.tools import IPCProcessLauncher, KeyListener, scan_device
-from src.utils.config import e
+
+# from src.utils.config import e
 
 
 def on_press(codes):
@@ -19,7 +20,9 @@ OS = os.name
 
 
 def launcher_factory() -> IPCProcessLauncher:
-    kbds = scan_device("kbd") # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
+    kbds = scan_device(
+        "kbd"
+    )  # usb-1bcf_08a0-event-kbd usb-BY_Tech_Gaming_Keyboard-event-kbd
 
     return (
         IPCProcessLauncher(
@@ -31,7 +34,7 @@ def launcher_factory() -> IPCProcessLauncher:
                 on_release=listener.on_release,
                 device=str(kbds["usb-BY_Tech_Gaming_Keyboard-event-kbd"]),
             ),
-            shared="/tmp/keyboard_ipc.sock"
+            shared="/tmp/jazmin_bean.sock"
             if OS == "posix"
             else r"\\.\pipe\keyboard_ipc",
         )
@@ -41,7 +44,8 @@ def launcher_factory() -> IPCProcessLauncher:
             if OS == "posix"
             else "bin/pipe/keyboard/out.exe",
             client=KeyListener(
-                on_press=listener.on_press, on_release=listener.on_release
+                on_press=listener.on_press, 
+                on_release=listener.on_release
             ),
             shared="/tmp/keyboard_ipc.sock"
             if OS == "posix"

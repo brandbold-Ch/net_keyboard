@@ -5,7 +5,7 @@ domain sockets. The methods are intentionally left as NotImplemented to be
 filled by platform-specific code if needed.
 """
 
-from src.transport.base import Address, NetworkChannel
+from src.transport.base import Address, NetworkChannel, Packet
 
 
 class SocketUnixClient(NetworkChannel):
@@ -16,11 +16,11 @@ class SocketUnixClient(NetworkChannel):
     future implementations.
     """
 
-    def send(self, packet: str | bytes) -> None:
+    def send(self, packet: Packet) -> None:
         """Send a packet to the connected server."""
         raise NotImplementedError()
 
-    def receive(self, size: int) -> str | bytes:
+    def receive(self, size: int) -> Packet:
         """Receive up to ``size`` bytes from the server."""
         raise NotImplementedError()
 

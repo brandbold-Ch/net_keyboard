@@ -1,1 +1,1 @@
-/tmp/keyboard_ipc.sock
+/tmp/jazmin_bean.sock

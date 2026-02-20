@@ -1,9 +1,8 @@
 """Client module for TCP communication."""
 
 import socket
-from typing import Union
 
-from src.transport.base import Address, NetworkChannel
+from src.transport.base import Address, NetworkChannel, Packet
 
 
 class TcpClient(NetworkChannel):
@@ -25,7 +24,7 @@ class TcpClient(NetworkChannel):
         self.c_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.open((host, port))
 
-    def send(self, packet: Union[str, bytes]) -> None:
+    def send(self, packet: Packet) -> None:
         """
         Send data packet to the connected server.
 
@@ -41,7 +40,7 @@ class TcpClient(NetworkChannel):
         else:
             raise TypeError("Invalid data type, cannot be sent over the network")
 
-    def receive(self, size: int) -> bytes:
+    def receive(self, size: int) -> Packet:
         """
         Receive data from the connected server.
 
