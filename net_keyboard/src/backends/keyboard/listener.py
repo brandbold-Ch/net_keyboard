@@ -44,7 +44,7 @@ class EventListener(KeyboardBackend):
         self._subscribers: KeyboardSubscribers = KeyboardSubscribers()
         self._launcher_factory = launcher_factory
 
-    def on_press(self, codes: TUPLE_CODES) -> None:
+    def on_press(self, event: TUPLE_CODES) -> None:
         """
         Handle keyboard press events and dispatch to subscribers.
 
@@ -52,9 +52,9 @@ class EventListener(KeyboardBackend):
             codes: A tuple of three integers (code, state, time) representing
                 the low-level event received from the IPC helper.
         """
-        self._emit_event(codes, KeyboardTypeEvent.PRESS)
+        self._emit_event(event, KeyboardTypeEvent.PRESS)
 
-    def on_release(self, codes: TUPLE_CODES) -> None:
+    def on_release(self, event: TUPLE_CODES) -> None:
         """
         Handle keyboard release events and dispatch to subscribers.
 
@@ -62,9 +62,9 @@ class EventListener(KeyboardBackend):
             codes: A tuple of three integers (code, state, time) representing
                 the low-level event received from the IPC helper.
         """
-        self._emit_event(codes, KeyboardTypeEvent.RELEASE)
+        self._emit_event(event, KeyboardTypeEvent.RELEASE)
 
-    def press(self, codes: TUPLE_CODES) -> None:
+    def press(self, event: TUPLE_CODES) -> None:
         """
         Simulate pressing a key.
 
@@ -93,7 +93,7 @@ class EventListener(KeyboardBackend):
             case _:
                 raise ValueError(f"Unsupported keyboard event type: {kind}")
 
-    def _emit_event(self, codes: TUPLE_CODES, kind: KeyboardTypeEvent) -> None:
+    def _emit_event(self, event: TUPLE_CODES, kind: KeyboardTypeEvent) -> None:
         """
         Notify all registered callbacks for a keyboard event.
 
@@ -104,11 +104,11 @@ class EventListener(KeyboardBackend):
         match kind:
             case KeyboardTypeEvent.PRESS:
                 for cb in self._subscribers.press:
-                    cb(codes)
+                    cb(event)
 
             case KeyboardTypeEvent.RELEASE:
                 for cb in self._subscribers.release:
-                    cb(codes)
+                    cb(event)
 
             case _:
                 raise ValueError(f"Unsupported keyboard event type: {kind}")

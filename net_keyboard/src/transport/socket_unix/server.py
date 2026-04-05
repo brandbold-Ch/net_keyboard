@@ -10,7 +10,7 @@ from socket import AF_UNIX, SOCK_STREAM
 from socket import socket as Socket
 from typing import Optional
 
-from src.transport.base import Address, NetworkChannel, Packet
+from src.transport import Address, NetworkChannel, Packet
 
 
 class SocketUnixServer(NetworkChannel):

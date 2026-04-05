@@ -47,7 +47,7 @@ class KeyboardBackend(ABC):
     """
 
     @abstractmethod
-    def on_press(self, codes: TUPLE_CODES) -> None:
+    def on_press(self, event: TUPLE_CODES) -> None:
         """
         Handle keyboard press events.
 
@@ -57,7 +57,7 @@ class KeyboardBackend(ABC):
         pass
 
     @abstractmethod
-    def on_release(self, codes: TUPLE_CODES) -> None:
+    def on_release(self, event: TUPLE_CODES) -> None:
         """
         Handle keyboard release events.
 
@@ -67,7 +67,7 @@ class KeyboardBackend(ABC):
         pass
 
     @abstractmethod
-    def press(self, codes: TUPLE_CODES) -> None:
+    def press(self, event: TUPLE_CODES) -> None:
         """
         Simulate pressing a key.
 

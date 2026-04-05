@@ -7,8 +7,9 @@ classes to launch and manage helper processes that bridge local input
 devices to the main application.
 """
 
-import os
+import platform
 import subprocess
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from struct import calcsize, unpack
@@ -16,6 +17,7 @@ from threading import Thread
 from typing import (
     Callable,
     Dict,
+    Generator,
     Literal,
     NamedTuple,
     Optional,
@@ -39,6 +41,10 @@ CB_EVENT: TypeAlias = Callable[[Tuple[int, int, int]], None]
 CALLBACK_READER: TypeAlias = Callable[[int], str | bytes]
 GLOBAL_FORMAT = FormatSpec(fmt=FMT, size=SIZE)
 CHANNEL_ROLE = Literal["client", "server"]
+SUFFIX = Optional[str]
+PREFIX = Optional[str]
+
+system: str = platform.system()
 
 
 def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
@@ -73,43 +79,63 @@ def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
     return buffer
 
 
-def scan_device(flag: str) -> Dict[str, Path]:
-    """Scan the system input devices directory for entries matching flag.
+class Devices:
+    devin: Path = Path("/dev/input")
 
-    This helper inspects ``/dev/input/by-id`` (commonly present on Linux)
-    and returns a mapping of entry name to the resolved device path for any
-    symbolic links that end with the given ``flag``. If the directory does
-    not exist, an empty mapping is returned.
+    @staticmethod
+    def _iter_path(path: Path) -> Generator[Path, None, None]:
+        return path.iterdir()
 
-    Args:
-        flag: Suffix string to match against device symlink names.
+    @classmethod
+    def _input(cls, prefix: PREFIX = None, suffix: SUFFIX = None) -> Dict[str, Path]:
+        entry: Optional[Path] = cls.find_entry()
+        devices: Dict[str, Path] = {}
 
-    Returns:
-        A dictionary mapping symlink names to resolved Path objects.
-    """
+        if entry is None:
+            raise RuntimeError("Input Devices Not Founds")
 
-    by_id = Path("/dev/input/by-id")
-    kbds: Dict[str, Path] = {}
+        for dir in cls._iter_path(entry):
+            name = dir.name
 
-    if not by_id.exists():
-        return kbds
+            if prefix:
+                if not name.startswith(prefix):
+                    continue
+            if suffix:
+                if not name.endswith(suffix):
+                    continue
 
-    for dir in by_id.iterdir():
-        if not dir.is_symlink():
-            continue
+            try:
+                target = dir.resolve()
+            except FileNotFoundError:
+                continue
 
-        name = dir.name
-        if not name.endswith(flag):
-            continue
+            devices[name] = target
 
-        try:
-            target = dir.resolve()
-        except FileNotFoundError:
-            continue
+        return devices
 
-        kbds[name] = target
+    @classmethod
+    def _uinput(cls, prefix: PREFIX = None, suffix: SUFFIX = None) -> Dict[str, Path]:
+        return {}
 
-    return kbds
+    @classmethod
+    def find_entry(cls) -> Optional[Path]:
+        for dir in cls._iter_path(cls.devin):
+            if not dir.name.startswith("by"):
+                continue
+            return dir
+
+    @classmethod
+    def scan_devices(
+        cls,
+        device_type: Literal["IN", "UIN"],
+        prefix: PREFIX = None,
+        suffix: SUFFIX = None,
+    ) -> Dict[str, Path]:
+        match device_type:
+            case "IN":
+                return cls._input(prefix, suffix)
+            case "UIN":
+                return cls._uinput(prefix, suffix)
 
 
 class IPCStreamReader(ABC):
@@ -160,21 +186,19 @@ class ChannelFactory:
             RuntimeError: When the current OS or role is unsupported.
         """
 
-        platform: str = os.name
+        match system:
+            case "Linux":
+                return cls._linux_channel(role)
 
-        match platform:
-            case "posix":
-                return cls._build_posix_channel(role)
-
-            case "nt":
-                return cls._build_nt_channel(role)
+            case "Windows":
+                return cls._windows_channel(role)
 
             case _:
-                raise RuntimeError(f"Unsupported OS: {platform}")
+                raise RuntimeError(f"Unsupported OS: {system}")
 
     @staticmethod
-    def _build_posix_channel(role: str) -> NetworkChannel:
-        """Build a POSIX-specific NetworkChannel implementation.
+    def _linux_channel(role: str) -> NetworkChannel:
+        """Build a Linux-specific NetworkChannel implementation.
 
         This currently maps to Unix domain sockets for both client and
         server roles.
@@ -194,7 +218,7 @@ class ChannelFactory:
             raise TypeError(f"(Posix) Unsupported Role: {role}")
 
     @staticmethod
-    def _build_nt_channel(role: str) -> NetworkChannel:
+    def _windows_channel(role: str) -> NetworkChannel:
         """Build a Windows-specific NetworkChannel implementation.
 
         On Windows this maps to named pipe based implementations.
@@ -220,7 +244,12 @@ class IPCProcessLauncher(ABC):
         self.server = server
         self.shared = shared
 
-        self.base_path = Path(__file__).resolve().parents[2]
+        if getattr(sys, "frozen", False):
+            # Ejecutándose en PyInstaller
+            self.base_path = Path(getattr(sys, "_MEIPASS"))
+        else:
+            # Desarrollo normal
+            self.base_path = Path(__file__).resolve().parents[2]
 
     def _cleanup(self, address: str) -> None:
         """Remove any pre-existing address file (Unix domain socket).
@@ -233,7 +262,7 @@ class IPCProcessLauncher(ABC):
         if path.exists():
             path.unlink()
 
-    def _set_readables(self) -> None:
+    def _set_filesync(self) -> None:
         """Prepare helper files in the project's bin directory.
 
         Writes a small ``shared.txt`` containing the address used for IPC and
@@ -242,11 +271,9 @@ class IPCProcessLauncher(ABC):
         manual inspection during debugging.
         """
 
-        def get_device(target: AGENT_SOURCE) -> Optional[str]:
+        def get_device(agent: AGENT_SOURCE) -> Optional[str]:
             return (
-                getattr(target, "device")
-                if isinstance(target, IPCStreamReader)
-                else None
+                getattr(agent, "device") if isinstance(agent, IPCStreamReader) else None
             )
 
         bin_path = self.base_path / "bin"
@@ -296,10 +323,10 @@ class IPCProcessLauncher(ABC):
         starts the server and client agents according to provided sources.
         """
 
-        if os.name == "posix":
+        if system == "Linux":
             self._cleanup(self.shared)
 
-        self._set_readables()
+        self._set_filesync()
 
         self._launch_channel("server", self.server)
         self._launch_channel("client", self.client)
