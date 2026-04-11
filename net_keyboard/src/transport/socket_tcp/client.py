@@ -2,10 +2,10 @@
 
 import socket
 
-from src.transport.base import Address, NetworkChannel, Packet
+from src.transport.base import Address, BaseConnection, Packet
 
 
-class TcpClient(NetworkChannel):
+class TCPClient(BaseConnection):
     """
     Base TCP client class for establishing network connections.
 
@@ -22,7 +22,7 @@ class TcpClient(NetworkChannel):
             port (int): The port number of the server.
         """
         self.c_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.open((host, port))
+        self.connect((host, port))
 
     def send(self, packet: Packet) -> None:
         """
@@ -49,7 +49,7 @@ class TcpClient(NetworkChannel):
         """
         return self.c_socket.recv(size)
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """
         Connect to the TCP server using the configured host and port.
         """

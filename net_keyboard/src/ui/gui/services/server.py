@@ -2,8 +2,8 @@ import platform
 
 from src.backends.base import KeyboardTypeEvent
 from src.backends.keyboard import EventListener
-from src.core.mkv_client import MKVClient
-from src.core.mkv_server import MKVServer
+from src.core.ntk_client import NetKeyboardClient
+from src.core.ntk_server import NetKeyboardServer
 from src.transport.ipc.tools import IPCProcessLauncher, KeyListener
 from src.ui.gui.models.client import Client
 from src.ui.gui.views.server.home import on_press, on_release
@@ -25,9 +25,9 @@ def launcher_factory() -> IPCProcessLauncher:
                 on_release=listener.on_release,
                 device=str(context.kbds[context.server.keyboard]),
             ),
-            shared="/tmp/IpcKeyboard.sock"
+            shared="/tmp/keyboard_ipc.sock"
             if OS == "Linux"
-            else r"\\.\pipe\IpcKeyboard",
+            else r"\\.\pipe\keyboard_ipc",
         )
         if OS == "Linux"
         else IPCProcessLauncher(
@@ -37,9 +37,9 @@ def launcher_factory() -> IPCProcessLauncher:
             client=KeyListener(
                 on_press=listener.on_press, on_release=listener.on_release
             ),
-            shared="/tmp/IpcKeyboard.sock"
+            shared="/tmp/keyboard_ipc.sock"
             if OS == "Linux"
-            else r"\\.\pipe\IpcKeyboard",
+            else r"\\.\pipe\keyboard_ipc",
         )
     )
 

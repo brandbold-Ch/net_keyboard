@@ -5,10 +5,10 @@ domain sockets. The methods are intentionally left as NotImplemented to be
 filled by platform-specific code if needed.
 """
 
-from src.transport.base import Address, NetworkChannel, Packet
+from src.transport.base import Address, BaseConnection, Packet
 
 
-class SocketUnixClient(NetworkChannel):
+class SocketLinuxClient(BaseConnection):
     """Client side channel for Unix domain sockets.
 
     The current code provides method signatures matching NetworkChannel but
@@ -24,7 +24,7 @@ class SocketUnixClient(NetworkChannel):
         """Receive up to ``size`` bytes from the server."""
         raise NotImplementedError()
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """Open a connection to the given address."""
         raise NotImplementedError()
 

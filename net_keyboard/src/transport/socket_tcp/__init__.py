@@ -4,7 +4,7 @@ Exports a basic TcpClient and TcpServer implementation used by higher-level
 adapters in the project.
 """
 
-from .client import TcpClient
-from .server import TcpServer
+from .client import TCPClient
+from .server import TCPServer
 
-__all__ = ["TcpClient", "TcpServer"]
+__all__ = ["TCPClient", "TCPServer"]

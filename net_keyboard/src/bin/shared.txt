@@ -1,1 +1,1 @@
-/tmp/IpcKeyboard.sock
+\\.\pipe\keyboard_ipc

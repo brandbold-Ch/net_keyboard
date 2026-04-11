@@ -16,8 +16,6 @@ from struct import calcsize, unpack
 from threading import Thread
 from typing import (
     Callable,
-    Dict,
-    Generator,
     Literal,
     NamedTuple,
     Optional,
@@ -26,7 +24,7 @@ from typing import (
     Union,
 )
 
-from src.transport.base import NetworkChannel
+from src.transport.base import BaseConnection
 
 FMT: str = "<H B Q"
 SIZE: int = calcsize(FMT)
@@ -41,8 +39,6 @@ CB_EVENT: TypeAlias = Callable[[Tuple[int, int, int]], None]
 CALLBACK_READER: TypeAlias = Callable[[int], str | bytes]
 GLOBAL_FORMAT = FormatSpec(fmt=FMT, size=SIZE)
 CHANNEL_ROLE = Literal["client", "server"]
-SUFFIX = Optional[str]
-PREFIX = Optional[str]
 
 system: str = platform.system()
 
@@ -79,65 +75,6 @@ def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
     return buffer
 
 
-class Devices:
-    devin: Path = Path("/dev/input")
-
-    @staticmethod
-    def _iter_path(path: Path) -> Generator[Path, None, None]:
-        return path.iterdir()
-
-    @classmethod
-    def _input(cls, prefix: PREFIX = None, suffix: SUFFIX = None) -> Dict[str, Path]:
-        entry: Optional[Path] = cls.find_entry()
-        devices: Dict[str, Path] = {}
-
-        if entry is None:
-            raise RuntimeError("Input Devices Not Founds")
-
-        for dir in cls._iter_path(entry):
-            name = dir.name
-
-            if prefix:
-                if not name.startswith(prefix):
-                    continue
-            if suffix:
-                if not name.endswith(suffix):
-                    continue
-
-            try:
-                target = dir.resolve()
-            except FileNotFoundError:
-                continue
-
-            devices[name] = target
-
-        return devices
-
-    @classmethod
-    def _uinput(cls, prefix: PREFIX = None, suffix: SUFFIX = None) -> Dict[str, Path]:
-        return {}
-
-    @classmethod
-    def find_entry(cls) -> Optional[Path]:
-        for dir in cls._iter_path(cls.devin):
-            if not dir.name.startswith("by"):
-                continue
-            return dir
-
-    @classmethod
-    def scan_devices(
-        cls,
-        device_type: Literal["IN", "UIN"],
-        prefix: PREFIX = None,
-        suffix: SUFFIX = None,
-    ) -> Dict[str, Path]:
-        match device_type:
-            case "IN":
-                return cls._input(prefix, suffix)
-            case "UIN":
-                return cls._uinput(prefix, suffix)
-
-
 class IPCStreamReader(ABC):
     @property
     @abstractmethod
@@ -171,7 +108,7 @@ AGENT_SOURCE: TypeAlias = Union[IPCStreamReader, str]
 
 class ChannelFactory:
     @classmethod
-    def create(cls, role: CHANNEL_ROLE) -> NetworkChannel:
+    def create(cls, role: CHANNEL_ROLE) -> BaseConnection:
         """Create a platform-specific NetworkChannel for the given role.
 
         Args:
@@ -197,7 +134,7 @@ class ChannelFactory:
                 raise RuntimeError(f"Unsupported OS: {system}")
 
     @staticmethod
-    def _linux_channel(role: str) -> NetworkChannel:
+    def _linux_channel(role: str) -> BaseConnection:
         """Build a Linux-specific NetworkChannel implementation.
 
         This currently maps to Unix domain sockets for both client and
@@ -205,20 +142,20 @@ class ChannelFactory:
         """
 
         if role == "client":
-            from src.transport.socket_unix import SocketUnixClient
+            from src.transport.socket_unix import SocketLinuxClient
 
-            return SocketUnixClient()
+            return SocketLinuxClient()
 
         elif role == "server":
-            from src.transport.socket_unix import SocketUnixServer
+            from src.transport.socket_unix import SocketLinuxServer
 
-            return SocketUnixServer()
+            return SocketLinuxServer()
 
         else:
             raise TypeError(f"(Posix) Unsupported Role: {role}")
 
     @staticmethod
-    def _windows_channel(role: str) -> NetworkChannel:
+    def _windows_channel(role: str) -> BaseConnection:
         """Build a Windows-specific NetworkChannel implementation.
 
         On Windows this maps to named pipe based implementations.
@@ -307,8 +244,8 @@ class IPCProcessLauncher(ABC):
         """
 
         if isinstance(agent, IPCStreamReader):
-            channel: NetworkChannel = ChannelFactory.create(role)
-            channel.open(self.shared)
+            channel: BaseConnection = ChannelFactory.create(role)
+            channel.connect(self.shared)
 
             Thread(target=agent.open, args=(channel.receive,)).start()
 

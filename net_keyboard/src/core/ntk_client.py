@@ -11,12 +11,12 @@ from typing import Optional
 
 from src.backends.base import KeyboardBackend
 from src.transport.ipc.tools import GLOBAL_FORMAT, safe_read
-from src.transport.socket_tcp import TcpClient
+from src.transport.socket_tcp import TCPClient
 
 K_LISTENER = Optional[KeyboardBackend]
 
 
-class MKVClient(TcpClient):
+class NetKeyboardClient(TCPClient):
     """Client adapter that receives serialized keyboard events from server.
 
     MKVClient connects to a remote TcpServer and continuously reads fixed

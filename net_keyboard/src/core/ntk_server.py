@@ -15,12 +15,12 @@ from src.backends.base import (
     KeyboardTypeEvent,
 )
 from src.transport.ipc.tools import GLOBAL_FORMAT
-from src.transport.socket_tcp import TcpServer
+from src.transport.socket_tcp import TCPServer
 
 K_LISTENER = Optional[KeyboardBackend]
 
 
-class MKVServer(TcpServer):
+class NetKeyboardServer(TCPServer):
     """Server adapter that forwards local keyboard events to TCP clients.
 
     MKVServer extends the generic TcpServer to listen for keyboard events

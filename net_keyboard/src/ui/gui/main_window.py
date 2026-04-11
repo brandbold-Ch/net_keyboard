@@ -3,7 +3,8 @@ import platform
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
-from src.transport.ipc.tools import Devices
+from src.core.devices.base import IODevice
+from src.core.devices.resolver import DeviceResolver
 from src.ui.gui.controllers.client import ClientController
 from src.ui.gui.controllers.navigation import NavigationController
 from src.ui.gui.controllers.server import ServerController
@@ -16,8 +17,8 @@ from src.ui.gui.views import (
 )
 from src.utils.context import context
 
-context.kbds = Devices.scan_devices("IN", suffix="kbd")
-context.mice = Devices.scan_devices("IN", suffix="mouse")
+context.kbds = DeviceResolver.scan_devices(device=IODevice.KEYBOARD)
+context.mice = DeviceResolver.scan_devices(device=IODevice.MOUSE)
 system_info = "Platform: {} \
     \nRelease: {} \
     \nArchitecture: {}".format(

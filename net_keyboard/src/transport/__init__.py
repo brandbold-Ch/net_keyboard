@@ -4,6 +4,6 @@ This package contains platform-aware and protocol-specific network
 channels used by the project (TCP, Unix domain sockets, pipes, etc.).
 """
 
-from .base import Address, NetworkChannel, Packet
+from .base import Address, BaseConnection, Packet
 
-__all__ = ["NetworkChannel", "Address", "Packet"]
+__all__ = ["BaseConnection", "Address", "Packet"]

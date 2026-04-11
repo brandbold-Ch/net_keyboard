@@ -1,4 +1,4 @@
-from .client import SocketUnixClient
-from .server import SocketUnixServer
+from .client import SocketLinuxClient
+from .server import SocketLinuxServer
 
-__all__ = ["SocketUnixClient", "SocketUnixServer"]
+__all__ = ["SocketLinuxClient", "SocketLinuxServer"]

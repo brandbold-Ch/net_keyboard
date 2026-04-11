@@ -3,10 +3,10 @@
 import socket
 from typing import Optional
 
-from src.transport.base import Address, NetworkChannel, Packet
+from src.transport.base import Address, BaseConnection, Packet
 
 
-class TcpServer(NetworkChannel):
+class TCPServer(BaseConnection):
     """
     Base TCP server class for handling network connections.
 
@@ -25,7 +25,7 @@ class TcpServer(NetworkChannel):
         self.s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.c_socket: Optional[socket.socket] = None
 
-        self.open((host, port))
+        self.connect((host, port))
 
     def send(self, packet: Packet) -> None:
         """
@@ -64,7 +64,7 @@ class TcpServer(NetworkChannel):
 
         return self.c_socket.recv(size)
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """
         Establish the server connection and wait for client connections.
 

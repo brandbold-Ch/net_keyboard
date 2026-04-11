@@ -1,13 +1,11 @@
-"""Client module for TCP communication."""
-
 from abc import ABC, abstractmethod
-from typing import Any, TypeAlias, Union
+from typing import Any, Tuple, TypeAlias, Union
 
-Address: TypeAlias = tuple[Any, ...] | str
+Address: TypeAlias = Tuple[Any, ...] | str
 Packet: TypeAlias = Union[str, bytes]
 
 
-class NetworkChannel(ABC):
+class BaseConnection(ABC):
     """
     Abstract base class for TCP communication.
 
@@ -38,7 +36,7 @@ class NetworkChannel(ABC):
         pass
 
     @abstractmethod
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """
         Establish a connection.
         """

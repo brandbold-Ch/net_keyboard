@@ -10,10 +10,10 @@ from socket import AF_UNIX, SOCK_STREAM
 from socket import socket as Socket
 from typing import Optional
 
-from src.transport import Address, NetworkChannel, Packet
+from src.transport import Address, BaseConnection, Packet
 
 
-class SocketUnixServer(NetworkChannel):
+class SocketLinuxServer(BaseConnection):
     """Server channel backed by a Unix domain socket.
 
     The server binds to a filesystem path and accepts a single client
@@ -42,7 +42,7 @@ class SocketUnixServer(NetworkChannel):
             self.c_socket = self.s_socket.accept()[0]
         return self.c_socket.recv(size)
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """Bind the server socket to the provided filesystem path and listen."""
         self.s_socket.bind(address)
         self.s_socket.listen(1)

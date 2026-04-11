@@ -9,10 +9,10 @@ from typing import Any
 
 from win32file import GENERIC_READ, OPEN_EXISTING, CloseHandle, CreateFile, ReadFile
 
-from src.transport.base import Address, NetworkChannel
+from src.transport.base import Address, BaseConnection
 
 
-class PipeClient(NetworkChannel):
+class PipeClient(BaseConnection):
     """Client wrapper for reading from a Windows named pipe.
 
     Note: This implementation focuses on reading (GENERIC_READ). Methods
@@ -36,7 +36,7 @@ class PipeClient(NetworkChannel):
             raise RuntimeError("Pipe not opened")
         return ReadFile(self.handle.handle, size)[1]
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """Open a handle to the named pipe at ``address``.
 
         The address is expected to be a string pipe name on Windows. The

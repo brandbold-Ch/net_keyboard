@@ -90,9 +90,6 @@ class EventListener(KeyboardBackend):
             case KeyboardTypeEvent.RELEASE:
                 self._subscribers.release.append(cb)
 
-            case _:
-                raise ValueError(f"Unsupported keyboard event type: {kind}")
-
     def _emit_event(self, event: TUPLE_CODES, kind: KeyboardTypeEvent) -> None:
         """
         Notify all registered callbacks for a keyboard event.
@@ -109,9 +106,6 @@ class EventListener(KeyboardBackend):
             case KeyboardTypeEvent.RELEASE:
                 for cb in self._subscribers.release:
                     cb(event)
-
-            case _:
-                raise ValueError(f"Unsupported keyboard event type: {kind}")
 
     def listen(self) -> None:
         """

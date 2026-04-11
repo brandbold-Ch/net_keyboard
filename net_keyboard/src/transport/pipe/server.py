@@ -5,10 +5,10 @@ interface. Methods are left as NotImplementedError since platform-specific
 implementations are required for Windows named pipes.
 """
 
-from src.transport.base import Address, NetworkChannel
+from src.transport.base import Address, BaseConnection
 
 
-class PipeServer(NetworkChannel):
+class PipeServer(BaseConnection):
     """Server-side pipe channel placeholder for Windows named pipes."""
 
     def send(self, packet: str | bytes) -> None:
@@ -19,7 +19,7 @@ class PipeServer(NetworkChannel):
         """Receive up to ``size`` bytes from the client."""
         raise NotImplementedError()
 
-    def open(self, address: Address) -> None:
+    def connect(self, address: Address) -> None:
         """Open or bind the server to the given address."""
         raise NotImplementedError()
 
