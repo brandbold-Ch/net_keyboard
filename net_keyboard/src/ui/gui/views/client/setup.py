@@ -15,10 +15,34 @@ from src.ui.gui.constants import ALIGN
 
 
 class ClientSetupView(QWidget):
+    """
+    A view for setting up the client connection.
+
+    This class provides a user interface for entering the host and port
+    information, as well as options for saving the connection and enabling
+    auto-reconnect.
+
+    Signals:
+        submitted (Signal): Emitted when the user submits the form with the
+            following parameters:
+            - str: Host address.
+            - int: Port number.
+            - bool: Save connection flag.
+            - bool: Auto-reconnect flag.
+        go_to_home (Signal): Emitted when the user navigates back to the home view.
+    """
+
     submitted = Signal(str, int, bool, bool)
     go_to_home = Signal()
 
     def __init__(self) -> None:
+        """
+        Initialize the ClientSetupView.
+
+        Sets up the layout and widgets for the client setup form, including
+        input fields for host and port, checkboxes for additional options,
+        and a submit button.
+        """
         super().__init__()
         layout = QVBoxLayout()
 
@@ -55,6 +79,12 @@ class ClientSetupView(QWidget):
         self.setLayout(layout)
 
     def _on_submit(self) -> None:
+        """
+        Handle the form submission.
+
+        Emits the `submitted` signal with the form data and the `go_to_home`
+        signal to navigate back to the home view.
+        """
         self.submitted.emit(
             self.input_host.text(),
             self.input_port.value(),
@@ -64,4 +94,11 @@ class ClientSetupView(QWidget):
         self.go_to_home.emit()
 
     def on_submit(self, handler: Callable[[str, int, bool, bool], None]) -> None:
+        """
+        Register a handler for the `submitted` signal.
+
+        Args:
+            handler (Callable[[str, int, bool, bool], None]): A function to handle
+                the submitted form data.
+        """
         self.submitted.connect(handler)

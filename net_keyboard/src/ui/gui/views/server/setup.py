@@ -7,10 +7,32 @@ from src.ui.gui.constants import ALIGN
 
 
 class ServerSetupView(QWidget):
+    """
+    A view for setting up the server configuration.
+
+    This class provides a GUI for selecting input devices (keyboard and mouse)
+    and submitting the configuration. It ensures that both devices are selected
+    before enabling the submission.
+
+    Signals:
+        submitted (Signal): Emitted when the user submits the selected devices.
+            Arguments:
+                - str: The selected keyboard.
+                - str: The selected mouse.
+        go_to_home (Signal): Emitted when the user navigates back to the home view.
+    """
+
     submitted = Signal(str, str)
     go_to_home = Signal()
 
     def __init__(self, keyboards: List[str], mice: List[str]) -> None:
+        """
+        Initialize the ServerSetupView.
+
+        Args:
+            keyboards (List[str]): A list of available keyboard device names.
+            mice (List[str]): A list of available mouse device names.
+        """
         super().__init__()
         layout = QVBoxLayout()
         self.first_lock = False
@@ -60,18 +82,46 @@ class ServerSetupView(QWidget):
         self.go_to_home.emit()
 
     def on_submit(self, handler: Callable[[str, str], None]) -> None:
+        """
+        Register a handler for the submission signal.
+
+        Args:
+            handler (Callable[[str, str], None]): A function to handle the
+                submitted keyboard and mouse device names.
+        """
         self.submitted.connect(handler)
 
     def _get_selected(self, list_view: QListView) -> str:
+        """
+        Retrieve the selected item from a QListView.
+
+        Args:
+            list_view (QListView): The list view to retrieve the selection from.
+
+        Returns:
+            str: The name of the selected item, or an empty string if no item is selected.
+        """
         index = list_view.currentIndex()
         return index.data() if index.isValid() else ""
 
     def _disable_first_lock(self) -> None:
+        """
+        Unlock the first selection requirement.
+
+        This method is called when the user selects an item in the keyboard list.
+        If both the first and second locks are unlocked, the "Next" button is enabled.
+        """
         self.first_lock = True
         if self.second_lock:
             self.button_next.setEnabled(True)
 
     def _disable_second_lock(self) -> None:
+        """
+        Unlock the second selection requirement.
+
+        This method is called when the user selects an item in the mouse list.
+        If both the first and second locks are unlocked, the "Next" button is enabled.
+        """
         self.second_lock = True
         if self.first_lock:
             self.button_next.setEnabled(True)

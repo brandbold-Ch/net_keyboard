@@ -10,7 +10,12 @@ TUPLE_CODES: TypeAlias = Tuple[int, int, int]
 
 
 class MouseTypeEvent(Enum):
-    """Enumeration of mouse event types."""
+    """
+    Enumeration of mouse event types.
+
+    This class defines the types of events that can be triggered by a mouse,
+    such as scrolling, moving, or clicking.
+    """
 
     SCROLL = auto()
     MOVE = auto()
@@ -18,7 +23,12 @@ class MouseTypeEvent(Enum):
 
 
 class KeyboardTypeEvent(Enum):
-    """Enumeration of keyboard event types."""
+    """
+    Enumeration of keyboard event types.
+
+    This class defines the types of events that can be triggered by a keyboard,
+    such as pressing or releasing a key.
+    """
 
     PRESS = auto()
     RELEASE = auto()
@@ -29,9 +39,12 @@ class KeyboardSubscribers:
     """
     Container for keyboard event callbacks.
 
+    This class holds lists of callback functions that are triggered
+    when specific keyboard events occur, such as key presses or releases.
+
     Attributes:
-        press (Subscribers): List of callbacks for key press events.
-        release (Subscribers): List of callbacks for key release events.
+        press (EventList): List of callbacks for key press events.
+        release (EventList): List of callbacks for key release events.
     """
 
     press: EventList = field(default_factory=list)
@@ -42,8 +55,9 @@ class KeyboardBackend(ABC):
     """
     Abstract base class for keyboard backend implementations.
 
-    This class defines the interface that all keyboard backend implementations
-    must follow for handling keyboard events.
+    This class serves as a blueprint for all keyboard backend implementations,
+    ensuring they provide methods to handle keyboard events such as key presses
+    and releases.
     """
 
     @abstractmethod
