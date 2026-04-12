@@ -1,6 +1,7 @@
 import platform
 
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
 from src.core.devices.base import IODevice
@@ -74,3 +75,7 @@ class MainWindow(QMainWindow):
         self.server_setup_view.go_to_home.connect(
             lambda: self.router.go("server_home_view")
         )
+
+    def closeEvent(self, event: QCloseEvent, /) -> None:
+        context.dump_config()
+        return super().closeEvent(event)

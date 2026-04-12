@@ -117,6 +117,7 @@ class EventTabView(QWidget):
         self.key_display.setText(str(key))
         self.state_display.setText(str(state))
         self.time_display.setText(str(time))
+        self.ascii_display.setText(KEY_MAP[key])
 
 
 class ListenerTabView(QWidget):

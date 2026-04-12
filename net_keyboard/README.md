@@ -2,12 +2,6 @@
 
 Una aplicación para compartir eventos de teclado y ratón sobre TCP, permitiendo controlar un ordenador remoto desde otro a través de la red.
 
-## Estado del Proyecto
-
-⚠️ **ACTUALMENTE EN REFACTORIZACIÓN** - El proyecto está siendo migrado a una arquitectura que extrae eventos de entrada mediante componentes nativos en C y los expone a la aplicación a través de un canal IPC.
-
-Por esa razón la estructura interna ha cambiado y muchas piezas todavía no son funcionales. El objetivo de la refactorización es mejorar precisión, latencia y estabilidad de la captura de eventos.
-
 ## Arquitectura Actual (resumen)
 
 El código ha sido reorganizado para separar claramente las responsabilidades:
@@ -28,7 +22,8 @@ src/
 
 Notas:
 - La integración con procesos nativos en C se realiza mediante un `IPCProcessLauncher` que lanza agentes nativos y expone los eventos por canales (Unix socket / pipe según la plataforma).
-- Las referencias previas a `pynput` han sido retiradas: la captura de eventos se realizará desde el agente nativo o, en sistemas Linux, por adaptadores que lean desde dispositivos de entrada (evdev) cuando aplique.
+- Las referencias previas a `pynput` han sido retiradas: la captura de eventos se realizará desde el agente nativo o, en sistemas Linux, por adaptadores que leen directamente desde dispositivos de entrada (evdev) cuando aplique.
+- **Actualmente ya es posible escuchar eventos de teclado en Linux:** el sistema selecciona automáticamente el dispositivo de entrada adecuado usando el módulo `core/devices/linux.py`, que detecta y resuelve los dispositivos disponibles en `/dev/input`. Esto permite que la aplicación funcione de forma plug-and-play en sistemas Linux sin configuración manual del dispositivo.
 
 ## Uso Previsto (ejemplo actualizado)
 
@@ -67,9 +62,31 @@ La configuración se gestiona mediante el archivo `config.json` en la raíz del 
 
 ```json
 {
-  "server": { "host": "0.0.0.0", "port": 5000 },
-  "client": { "host": "127.0.0.1", "port": 5000 },
-  "connections": []
+    "first_run": false,
+    "os": "Windows",
+    "client": {
+        "host": "192.168.100.10",
+        "port": 3500,
+        "save_connection": true,
+        "auto_reconnect": true
+    },
+    "server": {
+        "host": "0.0.0.0",
+        "port": 8000,
+        "clients": [
+            {
+                "host": "192.168.100.1",
+                "port": 8000,
+                "save_connection": true,
+                "auto_reconnect": true
+            }
+        ],
+        "pool": 2,
+        "keyboard": "\\\\?\\ACPI#MSFT0001#4&2d8d93fa&0#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+        "mouse": "\\\\?\\HID#VID_258A&PID_0049&MI_01&Col07#7&17e8f3e&0&0006#{378de44c-56ef-11d1-bc8c-00a0c91405dd}",
+        "save_connection": false,
+        "auto_reconnect": false
+    }
 }
 ```
 

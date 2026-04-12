@@ -75,6 +75,10 @@ def safe_read(reader: CALLBACK_READER, size: int) -> bytes:
     return buffer
 
 
+class QueueProcess:
+    pass
+
+
 class IPCStreamReader(ABC):
     @property
     @abstractmethod
@@ -182,10 +186,8 @@ class IPCProcessLauncher(ABC):
         self.shared = shared
 
         if getattr(sys, "frozen", False):
-            # Ejecutándose en PyInstaller
             self.base_path = Path(getattr(sys, "_MEIPASS"))
         else:
-            # Desarrollo normal
             self.base_path = Path(__file__).resolve().parents[2]
 
     def _cleanup(self, address: str) -> None:
@@ -214,13 +216,13 @@ class IPCProcessLauncher(ABC):
             )
 
         bin_path = self.base_path / "bin"
-        d_path = bin_path / "device.txt"
+        dev_path = bin_path / "device.txt"
         device = get_device(self.client) or get_device(self.server)
 
         (bin_path / "shared.txt").write_text(self.shared, encoding="utf-8")
 
         if device:
-            d_path.write_text(device, encoding="utf-8")
+            dev_path.write_text(device, encoding="utf-8")
 
     def _launch_process(self, exec: str) -> None:
         """Start an external helper process from the project's bin folder.

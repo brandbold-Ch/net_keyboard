@@ -2,8 +2,7 @@
 
 import json
 from dataclasses import asdict
-from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Any
 
 from src.ui.gui.models.client import Client
 from src.ui.gui.models.server import Server
@@ -20,11 +19,11 @@ class AppContext:
     """
 
     first_run: bool
+    os: str
     client: Client
     server: Server
-    kbds: Dict[str, Path]
-    mice: Dict[str, Path]
-    event: Tuple[int, int, int] = (0, 0, 0)
+    kbds: Dict[str, Any]
+    mice: Dict[str, Any]
 
     def __init__(self) -> None:
         """
@@ -49,6 +48,7 @@ class AppContext:
         )
 
         self.first_run = data["first_run"]
+        self.os = data["os"]
         self.client = Client(**client_data)
         self.server = Server(**server_data)
 
@@ -63,11 +63,12 @@ class AppContext:
             json.dump(
                 {
                     "first_run": self.first_run,
+                    "os": self.os,
                     "client": asdict(self.client),
                     "server": asdict(self.server),
                 },
                 fp=raw,
-                indent=2,
+                indent=4,
             )
 
 

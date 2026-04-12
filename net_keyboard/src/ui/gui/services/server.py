@@ -35,7 +35,9 @@ def launcher_factory() -> IPCProcessLauncher:
             if OS == "Linux"
             else "bin/pipe/keyboard/input.exe",
             client=KeyListener(
-                on_press=listener.on_press, on_release=listener.on_release
+                on_press=listener.on_press,
+                on_release=listener.on_release,
+                device=context.server.keyboard
             ),
             shared="/tmp/keyboard_ipc.sock"
             if OS == "Linux"

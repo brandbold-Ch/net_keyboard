@@ -1,19 +1,26 @@
 {
     "first_run": false,
-    "platform": "windows",
+    "os": "Windows",
     "client": {
-        "host": "127.0.0.1",
-        "port": 8000,
-        "save_connection": false,
-        "auto_reconnect": false
+        "host": "192.168.100.10",
+        "port": 3500,
+        "save_connection": true,
+        "auto_reconnect": true
     },
     "server": {
-        "host": "127.0.0.1",
+        "host": "0.0.0.0",
         "port": 8000,
-        "clients": [],
+        "clients": [
+            {
+                "host": "192.168.100.1",
+                "port": 8000,
+                "save_connection": true,
+                "auto_reconnect": true
+            }
+        ],
         "pool": 2,
-        "keyboard": "platform-i8042-serio-0-event-kbd",
-        "mouse": "pci-0000:00:15.1-platform-i2c_designware.1-event-mouse",
+        "keyboard": "\\\\?\\ACPI#MSFT0001#4&2d8d93fa&0#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+        "mouse": "\\\\?\\HID#VID_258A&PID_0049&MI_01&Col07#7&17e8f3e&0&0006#{378de44c-56ef-11d1-bc8c-00a0c91405dd}",
         "save_connection": false,
         "auto_reconnect": false
     }

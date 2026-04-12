@@ -1,53 +1,50 @@
-"""Windows named pipe client utilities.
+import time
 
-Provides a small PipeClient wrapper around Windows native API calls used to
-read from named pipes. The module is Windows-specific and uses pywin32's
-win32file functions.
-"""
-
-from typing import Any
-
+import pywintypes
+import win32pipe
 from win32file import GENERIC_READ, OPEN_EXISTING, CloseHandle, CreateFile, ReadFile
 
-from src.transport.base import Address, BaseConnection
+from src.transport.base import Address, BaseConnection, Packet
 
 
 class PipeClient(BaseConnection):
-    """Client wrapper for reading from a Windows named pipe.
-
-    Note: This implementation focuses on reading (GENERIC_READ). Methods
-    raise NotImplementedError where write/send semantics are not provided.
-    """
-
     def __init__(self) -> None:
-        self.handle: Any = None
+        self.handle = None
 
-    def send(self, packet: str | bytes) -> None:
-        """Send a packet to the server (not implemented)."""
+    def send(self, packet: Packet):
         raise NotImplementedError()
 
     def receive(self, size: int) -> str | bytes:
-        """Read up to ``size`` bytes from the pipe.
-
-        Returns the bytes read from the pipe. Raises RuntimeError when the
-        pipe has not been opened yet.
-        """
         if not self.handle:
             raise RuntimeError("Pipe not opened")
-        return ReadFile(self.handle.handle, size)[1]
+        return ReadFile(self.handle, size)[1]  # 👈 ojo aquí también
 
     def connect(self, address: Address) -> None:
-        """Open a handle to the named pipe at ``address``.
+        if not isinstance(address, str):
+            return
 
-        The address is expected to be a string pipe name on Windows. The
-        CreateFile call opens the pipe for reading using pywin32.
-        """
-        if isinstance(address, str):
-            self.handle = CreateFile(
-                address, GENERIC_READ, 0, None, OPEN_EXISTING, 0, None
-            )
+        while True:
+            try:
+                self.handle = CreateFile(
+                    address, GENERIC_READ, 0, None, OPEN_EXISTING, 0, None
+                )
+                break  # 🔥 conectado
+
+            except pywintypes.error as e:
+                if e.winerror == 2:
+                    # 🔥 pipe no existe aún
+                    time.sleep(0.3)
+                    continue
+
+                elif e.winerror == 231:
+                    # ERROR_PIPE_BUSY
+                    win32pipe.WaitNamedPipe(address, 5000)
+                    continue
+
+                else:
+                    raise
 
     def close(self) -> None:
-        """Close the pipe handle if it was opened."""
         if self.handle:
-            CloseHandle(self.handle.handle)
+            CloseHandle(self.handle)
+            self.handle = None

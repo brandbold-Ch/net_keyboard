@@ -1,1 +1,1 @@
-/dev/input/event4
+\\?\ACPI#MSFT0001#4&2d8d93fa&0#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}

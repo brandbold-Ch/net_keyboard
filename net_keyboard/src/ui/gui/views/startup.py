@@ -5,6 +5,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from src.ui.gui.constants import ALIGN, BASE_DIR
+from src.utils.context import context
 
 
 class StartupView(QWidget):
@@ -48,6 +49,7 @@ class StartupView(QWidget):
 
         label_title = QLabel("NetKeyboard Selector")
         label_info = QLabel(system_info)
+        context.os = platform.system()
 
         match platform.system():
             case "Linux":

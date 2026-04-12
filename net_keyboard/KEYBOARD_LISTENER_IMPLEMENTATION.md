@@ -166,87 +166,69 @@ class IPCStreamReader(ABC):
 
 ## 3. Implementación Concreta: `EventListener`
 
-### 3.1 Estructura Completa
+### 3.1 Estructura y Flujo Real
 
 **Ubicación:** `src/backends/keyboard/listener.py`
 
+La clase `EventListener` implementa la interfaz `KeyboardBackend` y actúa como manejador de eventos de teclado respaldado por IPC. Utiliza un `IPCProcessLauncher` para lanzar un proceso auxiliar que lee eventos de teclado a bajo nivel y los reenvía a través de un canal IPC.
+
+#### Características principales:
+- **Suscripción:** Permite registrar callbacks para eventos de presionado (`PRESS`) y soltado (`RELEASE`) de teclas.
+- **Recepción de eventos:** Los eventos llegan como tuplas `(code, state, time)` y se despachan a los suscriptores correspondientes.
+- **Simulación de teclas:** El método `press` está preparado para simular la pulsación de teclas (puede requerir implementación adicional según plataforma).
+- **Escucha:** El método `listen` inicia el proceso de escucha y es bloqueante hasta que se interrumpe el hilo.
+
+#### Ejemplo de uso:
+```python
+listener = EventListener(launcher_factory)
+listener.add_subscriber(on_press_callback, KeyboardTypeEvent.PRESS)
+listener.listen()
+```
+
+#### Implementación relevante:
 ```python
 class EventListener(KeyboardBackend):
     """IPC-backed keyboard event handler."""
 
     def __init__(self, launcher_factory: Callable[[], IPCProcessLauncher]) -> None:
-        """Initialize with an IPC launcher factory."""
         self._subscribers: KeyboardSubscribers = KeyboardSubscribers()
         self._launcher_factory = launcher_factory
 
-    def on_press(self, codes: TUPLE_CODES) -> None:
-        """Handle keyboard press events."""
-        self._emit_event(codes, KeyboardTypeEvent.PRESS)
+    def on_press(self, event: TUPLE_CODES) -> None:
+        self._emit_event(event, KeyboardTypeEvent.PRESS)
 
-    def on_release(self, codes: TUPLE_CODES) -> None:
-        """Handle keyboard release events."""
-        self._emit_event(codes, KeyboardTypeEvent.RELEASE)
+    def on_release(self, event: TUPLE_CODES) -> None:
+        self._emit_event(event, KeyboardTypeEvent.RELEASE)
 
-    def press(self, codes: TUPLE_CODES) -> None:
-        """Simulate pressing a key (stub - no implementado)."""
+    def press(self, event: TUPLE_CODES) -> None:
+        # Simulación de pulsación (stub)
         pass
 
-    def add_subscriber(
-        self, cb: Callable[[TUPLE_CODES], None], kind: KeyboardTypeEvent
-    ) -> None:
-        """Register a callback function for keyboard events."""
+    def add_subscriber(self, cb: Callable[[TUPLE_CODES], None], kind: KeyboardTypeEvent) -> None:
         match kind:
             case KeyboardTypeEvent.PRESS:
                 self._subscribers.press.append(cb)
             case KeyboardTypeEvent.RELEASE:
                 self._subscribers.release.append(cb)
-            case _:
-                raise ValueError(f"Unsupported keyboard event type: {kind}")
 
-    def _emit_event(self, codes: TUPLE_CODES, kind: KeyboardTypeEvent) -> None:
-        """Notify all registered callbacks for a keyboard event."""
+    def _emit_event(self, event: TUPLE_CODES, kind: KeyboardTypeEvent) -> None:
         match kind:
             case KeyboardTypeEvent.PRESS:
                 for cb in self._subscribers.press:
-                    cb(codes)
+                    cb(event)
             case KeyboardTypeEvent.RELEASE:
                 for cb in self._subscribers.release:
-                    cb(codes)
-            case _:
-                raise ValueError(f"Unsupported keyboard event type: {kind}")
+                    cb(event)
 
     def listen(self) -> None:
-        """Start listening for keyboard events (bloqueante)."""
         launcher = self._launcher_factory()
         launcher.launch()
 ```
 
-### 3.2 Detalles de Implementación
-
-#### **Constructor**
-- Toma una `launcher_factory` que produce instancias de `IPCProcessLauncher`
-- Inicializa un contenedor vacío de subscribers
-- **Por qué:** Permite inyección de dependencias y configuración flexible
-
-#### **on_press / on_release**
-- Reciben `codes: Tuple[int, int, int]` con formato `(scancode, state, time)`
-- Delegan el procesamiento a `_emit_event()`
-- **Estado:** Funcionan temporalmente si los eventos llegan desde IPC
-
-#### **add_subscriber**
-- Usa pattern matching con `match...case`
-- Agrega callbacks a las listas apropiadas según el tipo de evento
-- **Ventaja:** Type-safe y extensible para nuevos tipos
-
-#### **_emit_event (privado)**
-- Itera sobre todos los callbacks registrados
-- Invoca cada callback con los códigos del evento
-- **Patrón:** Observer pattern
-
-#### **listen (bloqueante)**
-- Crea una instancia del launcher desde la factory
-- Llama a `launcher.launch()` que inicia los procesos cliente/servidor
-- **Bloqueo:** Espera indefinidamente a que los eventos lleguen
+#### Detalles de flujo:
+- El `EventListener` recibe eventos desde un proceso auxiliar lanzado por `IPCProcessLauncher`.
+- Los eventos se decodifican y se notifican a los callbacks registrados.
+- El patrón de diseño es Observer, permitiendo desacoplar la fuente de eventos de los consumidores.
 
 ---
 
